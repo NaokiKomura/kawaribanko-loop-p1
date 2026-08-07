@@ -74,11 +74,11 @@ runs:
 
     # ------------------------------------------------------------------
     # 2. 認証情報の正規化
-    #    シークレット登録時に紛れ込んだ前後の空白・改行を取り除く。
-    #    改行を含む値は HTTP ヘッダに入れられないため、Claude Code は
-    #    API を呼ぶ前にローカルで
+    #    シークレット登録時に紛れ込んだ、HTTP ヘッダ値として使えない文字
+    #    （改行・タブ・制御文字・ゼロ幅空白などの非 ASCII）を取り除く。
+    #    1文字でも混ざると Claude Code は API を呼ぶ前にローカルで
     #      API Error: Header 'Authorization' has invalid value
-    #    を返して即死する（実際にこれで1サイクルを失った）。
+    #    を返して即死する（実測 ~97ms・課金0）。実際にこれで数回失敗した。
     # ------------------------------------------------------------------
     - name: Normalize credentials
       id: creds
@@ -122,8 +122,8 @@ runs:
         github_token: ${{ inputs.github-token }}
         claude_code_oauth_token: ${{ steps.creds.outputs.oauth }}
         anthropic_api_key: ${{ steps.creds.outputs.anthropic }}
-        # TODO(debug): エラー本文を出すための一時設定。特定でき次第削除する。
-        show_full_output: true
+        # show_full_output はツール実行結果ごとログに出すため、public リポジトリでは
+        # 有効にしない（切り分けが必要なときだけ一時的に付けて、必ず戻すこと）。
         prompt: ${{ steps.prompt.outputs.text }}
         claude_args: |
           --model ${{ inputs.model }}
