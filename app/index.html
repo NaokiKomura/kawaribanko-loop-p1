@@ -5,30 +5,339 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>かわりばんこ</title>
   <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #faf7f2;
+      --surface: #ffffff;
+      --text: #1a1a1a;
+      --text-sub: #6b6560;
+      --border: #e8e0d5;
+      --accent-bg: #f0ece4;
+    }
+
     body {
       font-family: "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
-      background: #faf7f2;
-      color: #1a1a1a;
-      display: grid;
-      place-items: center;
+      background: var(--bg);
+      color: var(--text);
       min-height: 100vh;
-      margin: 0;
+      line-height: 1.7;
     }
-    main { text-align: center; max-width: 34rem; padding: 2rem; }
-    h1 { font-size: 2rem; margin-bottom: .5rem; }
-    p { color: #6b6560; line-height: 1.8; }
-    code { background: #efe9e1; border-radius: 4px; padding: .1em .4em; }
+
+    /* ── Header ── */
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255, 255, 255, .96);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+      padding: .875rem 1.5rem;
+      display: flex;
+      align-items: baseline;
+      gap: .75rem;
+    }
+    .site-title {
+      font-size: 1.125rem;
+      font-weight: 700;
+      letter-spacing: -.01em;
+    }
+    .site-subtitle {
+      font-size: .8125rem;
+      color: var(--text-sub);
+    }
+
+    /* ── Filter bar ── */
+    .filter-bar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: .625rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      flex-wrap: wrap;
+    }
+    .filter-label {
+      font-size: .75rem;
+      color: var(--text-sub);
+      white-space: nowrap;
+      margin-right: .125rem;
+    }
+    .filter-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .3rem;
+      padding: .3rem .75rem;
+      border-radius: 99px;
+      border: 1.5px solid transparent;
+      font-family: inherit;
+      font-size: .8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: border-color .15s, opacity .15s;
+      white-space: nowrap;
+    }
+    .filter-btn[data-active="true"] {
+      border-color: currentColor;
+    }
+    .filter-btn:hover { opacity: .75; }
+
+    /* ── Feed ── */
+    .feed {
+      max-width: 42rem;
+      margin: 0 auto;
+      padding: 1.75rem 1.25rem 4rem;
+    }
+    .feed-meta {
+      font-size: .8125rem;
+      color: var(--text-sub);
+      margin-bottom: 1rem;
+    }
+    .entries {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* ── Entry card ── */
+    .entry {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--author-color, #888);
+      border-radius: 10px;
+      padding: 1.25rem 1.375rem;
+      transition: box-shadow .15s, transform .1s;
+    }
+    .entry:hover {
+      box-shadow: 0 4px 16px rgba(0, 0, 0, .07);
+      transform: translateY(-1px);
+    }
+
+    .entry-top {
+      display: flex;
+      gap: .75rem;
+      align-items: flex-start;
+      margin-bottom: .875rem;
+    }
+    .entry-mood {
+      font-size: 1.875rem;
+      line-height: 1;
+      flex-shrink: 0;
+      margin-top: .125rem;
+    }
+    .entry-byline { flex: 1; min-width: 0; }
+    .entry-author {
+      font-weight: 700;
+      font-size: .9375rem;
+      color: var(--author-color, inherit);
+      display: flex;
+      align-items: center;
+      gap: .35rem;
+      flex-wrap: wrap;
+    }
+    .cycle-tag {
+      font-size: .6875rem;
+      font-weight: 600;
+      background: var(--accent-bg);
+      color: var(--text-sub);
+      border-radius: 4px;
+      padding: .1em .45em;
+      letter-spacing: .02em;
+    }
+    .entry-date {
+      font-size: .8125rem;
+      color: var(--text-sub);
+      margin-top: .125rem;
+    }
+
+    .reply-ref {
+      margin-bottom: .875rem;
+      padding: .4375rem .75rem;
+      background: var(--accent-bg);
+      border-left: 3px solid #c8b89a;
+      border-radius: 0 6px 6px 0;
+      font-size: .8125rem;
+      color: var(--text-sub);
+      line-height: 1.5;
+    }
+    .reply-ref strong {
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .entry-title {
+      font-size: 1rem;
+      font-weight: 600;
+      line-height: 1.45;
+      margin-bottom: .625rem;
+    }
+    .entry-body {
+      font-size: .9375rem;
+      line-height: 1.9;
+      color: #3a3530;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* ── States ── */
+    .state {
+      text-align: center;
+      padding: 5rem 2rem;
+      color: var(--text-sub);
+    }
+    .state code {
+      background: var(--accent-bg);
+      border-radius: 4px;
+      padding: .1em .45em;
+      font-size: .875em;
+      color: #5a5048;
+    }
+    .state.error { color: #c0392b; }
   </style>
 </head>
 <body>
-  <main>
-    <h1>かわりばんこ</h1>
-    <p>
-      開発チームの交換日記。<br />
-      まだ実装されていません。<br /><br />
-      開発担当が <code>docs/product-brief.md</code> に従ってここを作り、<br />
-      3人が <code>data/diary.json</code> に日記を書き溜めていきます。
-    </p>
-  </main>
+
+<header class="site-header">
+  <span class="site-title">📔 かわりばんこ</span>
+  <span class="site-subtitle">開発チームの交換日記</span>
+</header>
+
+<nav class="filter-bar" id="filterBar">
+  <span class="filter-label">絞り込み:</span>
+</nav>
+
+<main>
+  <div class="feed" id="feed">
+    <p class="state">読み込み中...</p>
+  </div>
+</main>
+
+<script>
+  const state = { data: null, filter: null };
+
+  async function init() {
+    try {
+      const res = await fetch('data/diary.json');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      state.data = await res.json();
+      buildFilterBar();
+      renderFeed();
+    } catch (err) {
+      document.getElementById('feed').innerHTML = `
+        <div class="state error">
+          日記ファイルの読み込みに失敗しました。<br><br>
+          静的サーバで起動してください:<br>
+          <code>python3 -m http.server 8000 --directory app</code><br><br>
+          <small>${esc(err.message)}</small>
+        </div>`;
+    }
+  }
+
+  function getMember(id) {
+    return (state.data.members || []).find(m => m.id === id)
+      || { id, name: id, emoji: '❓', color: '#888' };
+  }
+
+  function getEntry(id) {
+    return (state.data.entries || []).find(e => e.id === id);
+  }
+
+  function buildFilterBar() {
+    const bar = document.getElementById('filterBar');
+    function btn(label, id, bg, fg) {
+      const el = document.createElement('button');
+      el.className = 'filter-btn';
+      el.dataset.id = id;
+      el.dataset.active = id === '' ? 'true' : 'false';
+      el.style.background = bg;
+      el.style.color = fg;
+      el.innerHTML = label;
+      el.addEventListener('click', () => {
+        state.filter = id || null;
+        document.querySelectorAll('.filter-btn').forEach(b => {
+          b.dataset.active = b.dataset.id === (state.filter ?? '') ? 'true' : 'false';
+        });
+        renderFeed();
+      });
+      return el;
+    }
+    bar.appendChild(btn('すべて', '', '#ede8e0', '#5a5048'));
+    (state.data.members || []).forEach(m => {
+      bar.appendChild(btn(`${m.emoji} ${m.name}`, m.id, m.color + '22', m.color));
+    });
+  }
+
+  function renderFeed() {
+    const feed = document.getElementById('feed');
+    const visible = state.filter
+      ? (state.data.entries || []).filter(e => e.author === state.filter)
+      : (state.data.entries || []);
+
+    if (visible.length === 0) {
+      feed.innerHTML = '<p class="state">まだ日記がありません。</p>';
+      return;
+    }
+
+    const frag = document.createDocumentFragment();
+
+    const meta = document.createElement('p');
+    meta.className = 'feed-meta';
+    meta.textContent = `${visible.length} 件`;
+    frag.appendChild(meta);
+
+    const list = document.createElement('div');
+    list.className = 'entries';
+    visible.forEach(e => list.appendChild(buildCard(e)));
+    frag.appendChild(list);
+
+    feed.innerHTML = '';
+    feed.appendChild(frag);
+  }
+
+  function buildCard(e) {
+    const m = getMember(e.author);
+    const card = document.createElement('article');
+    card.className = 'entry';
+    card.style.setProperty('--author-color', m.color);
+
+    let replyHTML = '';
+    if (e.replyTo) {
+      const replied = getEntry(e.replyTo);
+      if (replied) {
+        const rm = getMember(replied.author);
+        replyHTML = `<div class="reply-ref">↩ ${esc(rm.emoji)} <strong>${esc(rm.name)}</strong> への返信 ― 「${esc(replied.title)}」</div>`;
+      }
+    }
+
+    card.innerHTML = `
+      <div class="entry-top">
+        <div class="entry-mood">${esc(e.mood)}</div>
+        <div class="entry-byline">
+          <div class="entry-author">
+            <span>${esc(m.emoji)}</span><span>${esc(m.name)}</span>
+            <span class="cycle-tag">Day ${esc(String(e.cycle))}</span>
+          </div>
+          <div class="entry-date">${esc(e.date)}</div>
+        </div>
+      </div>
+      ${replyHTML}
+      <h2 class="entry-title">${esc(e.title)}</h2>
+      <p class="entry-body">${esc(e.body)}</p>
+    `;
+    return card;
+  }
+
+  function esc(s) {
+    if (s == null) return '';
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  init();
+</script>
 </body>
 </html>
