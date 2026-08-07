@@ -82,6 +82,8 @@ section.lead {
 }
 section.lead h1 { font-size: 2.8em; }
 section.lead p  { color: var(--sub); font-size: 1.1em; }
+/* lead は flex column なので inline-block が効かず、下線が全幅に伸びる */
+section.lead h2 { align-self: center; }
 
 /* 大きな数字を見せるスライド */
 section.stat strong {
