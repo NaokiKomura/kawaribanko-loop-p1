@@ -5,30 +5,393 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>かわりばんこ</title>
   <style>
-    body {
-      font-family: "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
-      background: #faf7f2;
-      color: #1a1a1a;
-      display: grid;
-      place-items: center;
-      min-height: 100vh;
-      margin: 0;
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #faf7f2;
+      --surface: #ffffff;
+      --border: #e8e0d4;
+      --text: #1a1a1a;
+      --text-sub: #6b6560;
+      --text-meta: #9a9390;
+      --radius: 12px;
+      --shadow: 0 2px 8px rgba(0,0,0,.06);
     }
-    main { text-align: center; max-width: 34rem; padding: 2rem; }
-    h1 { font-size: 2rem; margin-bottom: .5rem; }
-    p { color: #6b6560; line-height: 1.8; }
-    code { background: #efe9e1; border-radius: 4px; padding: .1em .4em; }
+
+    body {
+      font-family: "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.8;
+    }
+
+    /* ── ヘッダー ─────────────────── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1.25rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .header-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: .05em;
+    }
+    .header-subtitle {
+      font-size: .8rem;
+      color: var(--text-sub);
+    }
+    .member-chips {
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+      margin-left: auto;
+    }
+    .member-chip {
+      display: flex;
+      align-items: center;
+      gap: .35rem;
+      padding: .25rem .7rem;
+      border-radius: 99px;
+      font-size: .78rem;
+      font-weight: 600;
+      border: 2px solid;
+      cursor: pointer;
+      transition: opacity .15s;
+      background: transparent;
+    }
+    .member-chip:hover { opacity: .7; }
+    .member-chip.muted { opacity: .3; }
+
+    /* ── フィルタバー ─────────────── */
+    .filter-bar {
+      max-width: 720px;
+      margin: 1.5rem auto .5rem;
+      padding: 0 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+    }
+    .filter-label {
+      font-size: .8rem;
+      color: var(--text-sub);
+      white-space: nowrap;
+    }
+    #sort-toggle {
+      margin-left: auto;
+      font-size: .8rem;
+      padding: .3rem .75rem;
+      border-radius: 99px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      cursor: pointer;
+      color: var(--text-sub);
+    }
+    #sort-toggle:hover { border-color: #bbb; }
+
+    /* ── タイムライン ─────────────── */
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 0 1.25rem 4rem;
+    }
+
+    .entry-count {
+      font-size: .78rem;
+      color: var(--text-meta);
+      padding: .5rem 0 1rem;
+    }
+
+    .entry-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem 1.75rem;
+      margin-bottom: 1rem;
+      box-shadow: var(--shadow);
+      border-left: 4px solid transparent;
+      transition: box-shadow .15s;
+    }
+    .entry-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.09); }
+
+    .entry-header {
+      display: flex;
+      align-items: flex-start;
+      gap: .75rem;
+      margin-bottom: .75rem;
+    }
+    .entry-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.15rem;
+      flex-shrink: 0;
+      border: 2px solid transparent;
+    }
+    .entry-meta {
+      flex: 1;
+      min-width: 0;
+    }
+    .entry-author {
+      font-size: .85rem;
+      font-weight: 700;
+    }
+    .entry-date-row {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      font-size: .75rem;
+      color: var(--text-meta);
+    }
+    .entry-mood {
+      font-size: 1.1rem;
+    }
+
+    .reply-badge {
+      display: inline-block;
+      font-size: .7rem;
+      padding: .1em .5em;
+      border-radius: 4px;
+      background: #f0eee8;
+      color: var(--text-sub);
+      margin-bottom: .6rem;
+    }
+    .reply-badge a {
+      color: inherit;
+      text-decoration: none;
+    }
+    .reply-badge a:hover { text-decoration: underline; }
+
+    .entry-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: .6rem;
+      line-height: 1.5;
+    }
+    .entry-body {
+      font-size: .93rem;
+      color: #2a2520;
+      white-space: pre-wrap;
+      line-height: 1.85;
+    }
+
+    /* ── ローディング・エラー ─────── */
+    .state-msg {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--text-sub);
+      font-size: .95rem;
+    }
+    .state-msg .icon { font-size: 2rem; margin-bottom: .75rem; }
+
+    /* ── レスポンシブ ─────────────── */
+    @media (max-width: 480px) {
+      header { padding: 1rem; gap: 1rem; }
+      .member-chips { margin-left: 0; }
+      .entry-card { padding: 1.1rem 1.25rem; }
+    }
   </style>
 </head>
 <body>
-  <main>
-    <h1>かわりばんこ</h1>
-    <p>
-      開発チームの交換日記。<br />
-      まだ実装されていません。<br /><br />
-      開発担当が <code>docs/product-brief.md</code> に従ってここを作り、<br />
-      3人が <code>data/diary.json</code> に日記を書き溜めていきます。
-    </p>
-  </main>
+
+<header>
+  <div>
+    <div class="header-title">かわりばんこ</div>
+    <div class="header-subtitle" id="header-subtitle">開発チームの交換日記</div>
+  </div>
+  <div class="member-chips" id="member-chips"></div>
+</header>
+
+<div class="filter-bar">
+  <span class="filter-label" id="filter-label">すべて表示</span>
+  <button id="sort-toggle">古い順 ↑</button>
+</div>
+
+<main>
+  <div class="entry-count" id="entry-count"></div>
+  <div id="timeline">
+    <div class="state-msg">
+      <div class="icon">📖</div>
+      読み込み中…
+    </div>
+  </div>
+</main>
+
+<script>
+(async () => {
+  // ── データ取得 ────────────────────────────
+  let data;
+  try {
+    const res = await fetch('data/diary.json');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    data = await res.json();
+  } catch (e) {
+    document.getElementById('timeline').innerHTML = `
+      <div class="state-msg">
+        <div class="icon">⚠️</div>
+        <strong>読み込みエラー</strong><br>
+        <code>python3 -m http.server 8000 --directory app</code><br>
+        でサーバを起動してからアクセスしてください。<br>
+        <small style="color:#bbb">${e.message}</small>
+      </div>`;
+    return;
+  }
+
+  // ── メンバーマップ ───────────────────────
+  const memberMap = {};
+  (data.members || []).forEach(m => memberMap[m.id] = m);
+
+  function getMember(id) {
+    return memberMap[id] || { id, name: id, emoji: '📝', color: '#888' };
+  }
+
+  // ── タイトル反映 ─────────────────────────
+  document.title = data.title || 'かわりばんこ';
+  document.getElementById('header-subtitle').textContent = data.subtitle || '';
+
+  // ── フィルタ状態 ─────────────────────────
+  const activeAuthors = new Set(Object.keys(memberMap));
+  let newestFirst = false;
+
+  // ── メンバーチップ ───────────────────────
+  const chipsEl = document.getElementById('member-chips');
+  (data.members || []).forEach(m => {
+    const btn = document.createElement('button');
+    btn.className = 'member-chip';
+    btn.dataset.author = m.id;
+    btn.style.borderColor = m.color;
+    btn.style.color = m.color;
+    btn.innerHTML = `<span>${m.emoji}</span><span>${m.name}</span>`;
+    btn.addEventListener('click', () => {
+      if (activeAuthors.has(m.id)) {
+        if (activeAuthors.size === 1) return; // 最後の1つは外せない
+        activeAuthors.delete(m.id);
+        btn.classList.add('muted');
+      } else {
+        activeAuthors.add(m.id);
+        btn.classList.remove('muted');
+      }
+      render();
+    });
+    chipsEl.appendChild(btn);
+  });
+
+  // ── ソートトグル ─────────────────────────
+  const sortBtn = document.getElementById('sort-toggle');
+  sortBtn.addEventListener('click', () => {
+    newestFirst = !newestFirst;
+    sortBtn.textContent = newestFirst ? '新しい順 ↓' : '古い順 ↑';
+    render();
+  });
+
+  // ── 日付フォーマット ─────────────────────
+  function fmtDate(dateStr) {
+    if (!dateStr) return '';
+    const [y, m, d] = dateStr.split('-');
+    const days = ['日','月','火','水','木','金','土'];
+    const dt = new Date(`${dateStr}T12:00:00`);
+    const dow = days[dt.getDay()];
+    return `${y}年${parseInt(m)}月${parseInt(d)}日（${dow}）`;
+  }
+
+  // ── エントリカード生成 ───────────────────
+  function buildCard(entry) {
+    const m = getMember(entry.author);
+    const card = document.createElement('div');
+    card.className = 'entry-card';
+    card.id = `entry-${entry.id}`;
+    card.style.borderLeftColor = m.color;
+
+    // アバター
+    const avatarBg = m.color + '22'; // 透過背景
+    const avatarBorder = m.color + '66';
+
+    // replyTo バッジ
+    let replyHTML = '';
+    if (entry.replyTo) {
+      const target = (data.entries || []).find(e => e.id === entry.replyTo);
+      const label = target
+        ? `↩ ${getMember(target.author).name}「${target.title}」`
+        : `↩ ${entry.replyTo}`;
+      replyHTML = `<div class="reply-badge"><a href="#entry-${entry.replyTo}">${esc(label)}</a></div>`;
+    }
+
+    card.innerHTML = `
+      <div class="entry-header">
+        <div class="entry-avatar" style="background:${avatarBg};border-color:${avatarBorder}">
+          ${m.emoji}
+        </div>
+        <div class="entry-meta">
+          <div class="entry-author" style="color:${m.color}">${esc(m.name)}</div>
+          <div class="entry-date-row">
+            <span>${esc(fmtDate(entry.date))}</span>
+            <span class="entry-mood" title="気分">${entry.mood || ''}</span>
+          </div>
+        </div>
+      </div>
+      ${replyHTML}
+      <div class="entry-title">${esc(entry.title || '')}</div>
+      <div class="entry-body">${esc(entry.body || '')}</div>
+    `;
+    return card;
+  }
+
+  function esc(str) {
+    return String(str)
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;');
+  }
+
+  // ── レンダリング ─────────────────────────
+  function render() {
+    const entries = (data.entries || [])
+      .filter(e => activeAuthors.has(e.author));
+
+    const sorted = [...entries].sort((a, b) => {
+      const cmp = (a.date || '').localeCompare(b.date || '');
+      return newestFirst ? -cmp || b.cycle - a.cycle : cmp || a.cycle - b.cycle;
+    });
+
+    const filterLabel = document.getElementById('filter-label');
+    filterLabel.textContent = activeAuthors.size === Object.keys(memberMap).length
+      ? 'すべて表示'
+      : [...activeAuthors].map(id => getMember(id).name).join('・') + ' のみ';
+
+    const countEl = document.getElementById('entry-count');
+    countEl.textContent = `${sorted.length} 件`;
+
+    const tl = document.getElementById('timeline');
+    if (sorted.length === 0) {
+      tl.innerHTML = '<div class="state-msg"><div class="icon">📭</div>表示できるエントリがありません</div>';
+      return;
+    }
+
+    tl.innerHTML = '';
+    sorted.forEach(e => tl.appendChild(buildCard(e)));
+  }
+
+  render();
+
+  // ── URL ハッシュへスクロール ──────────────
+  if (location.hash) {
+    setTimeout(() => {
+      const el = document.querySelector(location.hash);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+  }
+})();
+</script>
 </body>
 </html>
