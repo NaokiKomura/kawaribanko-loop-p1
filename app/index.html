@@ -39,21 +39,9 @@
       top: 0;
       z-index: 10;
     }
-    .header-title {
-      font-size: 1.25rem;
-      font-weight: 700;
-      letter-spacing: .05em;
-    }
-    .header-subtitle {
-      font-size: .8rem;
-      color: var(--text-sub);
-    }
-    .member-chips {
-      display: flex;
-      gap: .5rem;
-      flex-wrap: wrap;
-      margin-left: auto;
-    }
+    .header-title { font-size: 1.25rem; font-weight: 700; letter-spacing: .05em; }
+    .header-subtitle { font-size: .8rem; color: var(--text-sub); }
+    .member-chips { display: flex; gap: .5rem; flex-wrap: wrap; margin-left: auto; }
     .member-chip {
       display: flex;
       align-items: center;
@@ -79,11 +67,7 @@
       align-items: center;
       gap: .75rem;
     }
-    .filter-label {
-      font-size: .8rem;
-      color: var(--text-sub);
-      white-space: nowrap;
-    }
+    .filter-label { font-size: .8rem; color: var(--text-sub); white-space: nowrap; }
     #sort-toggle {
       margin-left: auto;
       font-size: .8rem;
@@ -100,14 +84,9 @@
     main {
       max-width: 720px;
       margin: 0 auto;
-      padding: 0 1.25rem 4rem;
+      padding: 0 1.25rem 2rem;
     }
-
-    .entry-count {
-      font-size: .78rem;
-      color: var(--text-meta);
-      padding: .5rem 0 1rem;
-    }
+    .entry-count { font-size: .78rem; color: var(--text-meta); padding: .5rem 0 1rem; }
 
     .entry-card {
       background: var(--surface);
@@ -120,85 +99,165 @@
       transition: box-shadow .15s;
     }
     .entry-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.09); }
+    .entry-card.local-draft { background: #fffef8; border-left-style: dashed; }
 
-    .entry-header {
-      display: flex;
-      align-items: flex-start;
-      gap: .75rem;
-      margin-bottom: .75rem;
-    }
+    .entry-header { display: flex; align-items: flex-start; gap: .75rem; margin-bottom: .75rem; }
     .entry-avatar {
-      width: 38px;
-      height: 38px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.15rem;
-      flex-shrink: 0;
-      border: 2px solid transparent;
+      width: 38px; height: 38px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.15rem; flex-shrink: 0; border: 2px solid transparent;
     }
-    .entry-meta {
-      flex: 1;
-      min-width: 0;
-    }
-    .entry-author {
-      font-size: .85rem;
-      font-weight: 700;
-    }
+    .entry-meta { flex: 1; min-width: 0; }
+    .entry-author { font-size: .85rem; font-weight: 700; }
     .entry-date-row {
-      display: flex;
-      align-items: center;
-      gap: .5rem;
-      font-size: .75rem;
-      color: var(--text-meta);
+      display: flex; align-items: center; gap: .5rem;
+      font-size: .75rem; color: var(--text-meta);
     }
-    .entry-mood {
-      font-size: 1.1rem;
-    }
+    .entry-mood { font-size: 1.1rem; }
 
     .reply-badge {
-      display: inline-block;
-      font-size: .7rem;
-      padding: .1em .5em;
-      border-radius: 4px;
-      background: #f0eee8;
-      color: var(--text-sub);
-      margin-bottom: .6rem;
+      display: inline-block; font-size: .7rem; padding: .1em .5em;
+      border-radius: 4px; background: #f0eee8; color: var(--text-sub); margin-bottom: .6rem;
     }
-    .reply-badge a {
-      color: inherit;
-      text-decoration: none;
-    }
+    .reply-badge a { color: inherit; text-decoration: none; }
     .reply-badge a:hover { text-decoration: underline; }
 
-    .entry-title {
-      font-size: 1.05rem;
-      font-weight: 700;
-      margin-bottom: .6rem;
-      line-height: 1.5;
+    .entry-title { font-size: 1.05rem; font-weight: 700; margin-bottom: .6rem; line-height: 1.5; }
+    .entry-body { font-size: .93rem; color: #2a2520; white-space: pre-wrap; line-height: 1.85; }
+
+    /* ── 下書きバッジとアクション ─── */
+    .local-badge {
+      display: inline-block; font-size: .68rem; padding: .12em .55em;
+      border-radius: 4px; background: #fff3cd; color: #7a5800;
+      margin-bottom: .6rem; font-weight: 700; letter-spacing: .04em;
     }
-    .entry-body {
-      font-size: .93rem;
-      color: #2a2520;
-      white-space: pre-wrap;
-      line-height: 1.85;
+    .draft-actions {
+      display: flex; gap: .5rem; flex-wrap: wrap;
+      margin-top: .85rem; padding-top: .75rem; border-top: 1px solid var(--border);
+    }
+    .draft-btn {
+      font-size: .78rem; padding: .25rem .7rem; border-radius: 99px;
+      border: 1px solid var(--border); background: transparent;
+      cursor: pointer; color: var(--text-sub); transition: background .12s;
+    }
+    .draft-btn:hover { background: var(--bg); }
+    .draft-btn.export-btn { border-color: #4a7ce8; color: #4a7ce8; }
+    .draft-btn.export-btn:hover { background: #eef3fd; }
+
+    /* ── 非表示通知 ───────────────── */
+    .hidden-notice {
+      font-size: .8rem; color: var(--text-meta);
+      text-align: center; padding: .3rem 0 .8rem;
+    }
+    .hidden-notice button {
+      background: none; border: none; cursor: pointer;
+      color: #4a7ce8; font-size: .8rem; text-decoration: underline;
     }
 
     /* ── ローディング・エラー ─────── */
-    .state-msg {
-      text-align: center;
-      padding: 4rem 2rem;
-      color: var(--text-sub);
-      font-size: .95rem;
-    }
+    .state-msg { text-align: center; padding: 4rem 2rem; color: var(--text-sub); font-size: .95rem; }
     .state-msg .icon { font-size: 2rem; margin-bottom: .75rem; }
+
+    /* ── 投稿フォームエリア ──────── */
+    .compose-wrap {
+      max-width: 720px; margin: 0 auto 3rem; padding: 0 1.25rem;
+    }
+    .compose-toggle-btn {
+      width: 100%; padding: .75rem 1.25rem; border-radius: var(--radius);
+      border: 2px dashed var(--border); background: var(--surface);
+      cursor: pointer; font-size: .92rem; color: var(--text-sub);
+      transition: border-color .15s, background .15s; text-align: left;
+    }
+    .compose-toggle-btn:hover, .compose-toggle-btn.open {
+      border-color: #aaa; background: #f7f4ef;
+    }
+    .compose-panel {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.5rem 1.75rem;
+      margin-top: .75rem; box-shadow: var(--shadow);
+    }
+    .compose-panel h2 { font-size: 1rem; font-weight: 700; margin-bottom: 1.25rem; }
+    .form-row { margin-bottom: .9rem; }
+    .form-row label {
+      display: block; font-size: .78rem; font-weight: 600;
+      color: var(--text-sub); margin-bottom: .3rem;
+    }
+    .form-row input,
+    .form-row select,
+    .form-row textarea {
+      width: 100%; padding: .55rem .8rem; border: 1px solid var(--border);
+      border-radius: 8px; font-size: .93rem; font-family: inherit;
+      background: var(--bg); color: var(--text); transition: border-color .12s;
+    }
+    .form-row input:focus,
+    .form-row select:focus,
+    .form-row textarea:focus { outline: none; border-color: #aaa; }
+    .form-row textarea { min-height: 130px; resize: vertical; line-height: 1.75; }
+    .field-hint { font-size: .73rem; color: var(--text-meta); margin-top: .25rem; }
+    .form-id-preview {
+      font-size: .85rem; color: var(--text-sub);
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 8px; padding: .45rem .8rem; font-family: monospace;
+    }
+    .form-actions { display: flex; gap: .75rem; flex-wrap: wrap; margin-top: 1.25rem; }
+    .btn-primary {
+      padding: .6rem 1.4rem; background: #4a7ce8; color: #fff;
+      border: none; border-radius: 8px; cursor: pointer;
+      font-size: .9rem; font-weight: 600; transition: background .12s;
+    }
+    .btn-primary:hover { background: #3a6cd8; }
+    .btn-secondary {
+      padding: .6rem 1rem; background: transparent; border: 1px solid var(--border);
+      border-radius: 8px; cursor: pointer; font-size: .9rem; color: var(--text-sub);
+      transition: background .12s;
+    }
+    .btn-secondary:hover { background: var(--bg); }
+    .form-error { color: #c0392b; font-size: .82rem; margin-top: .4rem; }
+
+    /* ── エクスポートモーダル ────── */
+    .export-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 200;
+      display: flex; align-items: center; justify-content: center; padding: 1.5rem;
+    }
+    .export-box {
+      background: var(--surface); border-radius: var(--radius); padding: 1.75rem;
+      max-width: 640px; width: 100%; max-height: 85vh; overflow-y: auto;
+      box-shadow: 0 10px 40px rgba(0,0,0,.2);
+    }
+    .export-box h3 { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; }
+    .export-notice {
+      background: #e8f4fd; border-left: 3px solid #4a7ce8; padding: .7rem 1rem;
+      border-radius: 4px; font-size: .87rem; margin-bottom: .85rem;
+      color: #1a3a6a; line-height: 1.6;
+    }
+    .export-warning {
+      background: #fff3cd; border-left: 3px solid #ffc107; padding: .7rem 1rem;
+      border-radius: 4px; font-size: .85rem; margin-bottom: .85rem;
+      color: #664d03; white-space: pre-wrap;
+    }
+    .export-pre {
+      background: #f3f3f3; border: 1px solid #ddd; border-radius: 6px;
+      padding: 1rem; font-size: .8rem; font-family: 'Courier New', monospace;
+      overflow-x: auto; white-space: pre; margin-bottom: 1rem; line-height: 1.6;
+    }
+    .export-actions { display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    .export-copy-btn {
+      padding: .55rem 1.1rem; background: #4a7ce8; color: #fff;
+      border: none; border-radius: 8px; cursor: pointer; font-size: .88rem; font-weight: 600;
+    }
+    .export-copy-btn:hover { background: #3a6cd8; }
+    .export-dl-btn, .export-close-btn {
+      padding: .55rem 1.1rem; background: transparent; border: 1px solid var(--border);
+      border-radius: 8px; cursor: pointer; font-size: .88rem; color: var(--text-sub);
+    }
+    .export-dl-btn:hover, .export-close-btn:hover { background: var(--bg); }
 
     /* ── レスポンシブ ─────────────── */
     @media (max-width: 480px) {
       header { padding: 1rem; gap: 1rem; }
       .member-chips { margin-left: 0; }
       .entry-card { padding: 1.1rem 1.25rem; }
+      .compose-panel { padding: 1.1rem 1.25rem; }
     }
   </style>
 </head>
@@ -219,6 +278,7 @@
 
 <main>
   <div class="entry-count" id="entry-count"></div>
+  <div id="hidden-notice"></div>
   <div id="timeline">
     <div class="state-msg">
       <div class="icon">📖</div>
@@ -226,6 +286,67 @@
     </div>
   </div>
 </main>
+
+<div class="compose-wrap">
+  <button class="compose-toggle-btn" id="compose-toggle">✏️ 日記を書く</button>
+  <div class="compose-panel" id="compose-panel" hidden>
+    <h2>新しい日記エントリ（ローカル下書き）</h2>
+    <div class="form-row">
+      <label for="form-author">書き手</label>
+      <select id="form-author"></select>
+    </div>
+    <div class="form-row">
+      <label>サイクル番号</label>
+      <input type="number" id="form-cycle" min="1" max="7" step="1" style="max-width:80px" />
+      <div class="field-hint">エントリID（自動生成）: <span id="form-id-preview" style="font-family:monospace">—</span></div>
+    </div>
+    <div class="form-row">
+      <label for="form-date">日付</label>
+      <input type="date" id="form-date" />
+    </div>
+    <div class="form-row">
+      <label for="form-mood">気分（絵文字1つ）</label>
+      <input type="text" id="form-mood" placeholder="😊" maxlength="8" style="max-width:100px" />
+    </div>
+    <div class="form-row">
+      <label for="form-title">タイトル</label>
+      <input type="text" id="form-title" placeholder="一行の見出し" />
+    </div>
+    <div class="form-row">
+      <label for="form-body">本文（200〜500字程度）</label>
+      <textarea id="form-body" placeholder="今日やったこと、詰まったこと、他の2人へのメッセージ…"></textarea>
+    </div>
+    <div class="form-row">
+      <label for="form-reply-to">返信先（任意）</label>
+      <select id="form-reply-to">
+        <option value="">なし</option>
+      </select>
+    </div>
+    <div class="form-error" id="form-error"></div>
+    <div class="form-actions">
+      <button class="btn-primary" id="form-submit">下書きとして保存</button>
+      <button class="btn-secondary" id="form-cancel">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- エクスポートモーダル -->
+<div class="export-overlay" id="export-overlay" hidden>
+  <div class="export-box">
+    <h3>JSON として出力</h3>
+    <div class="export-notice">
+      これは <strong>追記</strong> です。既存のエントリは変更されません。<br>
+      出力された JSON を <code>app/data/diary.json</code> の <code>entries</code> 配列の末尾に追加してください。
+    </div>
+    <div class="export-warning" id="export-warning" hidden></div>
+    <pre class="export-pre" id="export-pre"></pre>
+    <div class="export-actions">
+      <button class="export-copy-btn" id="export-copy">クリップボードにコピー</button>
+      <button class="export-dl-btn" id="export-dl">ダウンロード</button>
+    </div>
+    <button class="export-close-btn" id="export-close">閉じる</button>
+  </div>
+</div>
 
 <script>
 (async () => {
@@ -236,20 +357,30 @@
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     data = await res.json();
   } catch (e) {
-    document.getElementById('timeline').innerHTML = `
-      <div class="state-msg">
-        <div class="icon">⚠️</div>
-        <strong>読み込みエラー</strong><br>
-        <code>python3 -m http.server 8000 --directory app</code><br>
-        でサーバを起動してからアクセスしてください。<br>
-        <small style="color:#bbb">${e.message}</small>
-      </div>`;
+    document.getElementById('timeline').innerHTML =
+      '<div class="state-msg">'
+      + '<div class="icon">⚠️</div>'
+      + '<strong>読み込みエラー</strong><br>'
+      + '<code>python3 -m http.server 8000 --directory app</code><br>'
+      + 'でサーバを起動してからアクセスしてください。<br>'
+      + '<small style="color:#bbb">' + String(e.message).replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</small>'
+      + '</div>';
     return;
+  }
+
+  // ── エスケープ (' も変換) ─────────────────
+  function esc(str) {
+    return String(str)
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;')
+      .replace(/'/g,'&#39;');
   }
 
   // ── メンバーマップ ───────────────────────
   const memberMap = {};
-  (data.members || []).forEach(m => memberMap[m.id] = m);
+  (data.members || []).forEach(m => { memberMap[m.id] = m; });
 
   function getMember(id) {
     return memberMap[id] || { id, name: id, emoji: '📝', color: '#888' };
@@ -260,7 +391,10 @@
   document.getElementById('header-subtitle').textContent = data.subtitle || '';
 
   // ── フィルタ状態 ─────────────────────────
-  const activeAuthors = new Set(Object.keys(memberMap));
+  // 未知著者（membersに未定義）のエントリも初期表示する
+  const allAuthorIds = new Set(Object.keys(memberMap));
+  (data.entries || []).forEach(e => { if (e.author) allAuthorIds.add(e.author); });
+  const activeAuthors = new Set(allAuthorIds);
   let newestFirst = false;
 
   // ── メンバーチップ ───────────────────────
@@ -269,17 +403,26 @@
     const btn = document.createElement('button');
     btn.className = 'member-chip';
     btn.dataset.author = m.id;
+    btn.setAttribute('aria-pressed', 'true');
     btn.style.borderColor = m.color;
     btn.style.color = m.color;
-    btn.innerHTML = `<span>${m.emoji}</span><span>${m.name}</span>`;
+    // textContentで追加（innerHTML回避）
+    const spanEmoji = document.createElement('span');
+    spanEmoji.textContent = m.emoji;
+    const spanName = document.createElement('span');
+    spanName.textContent = m.name;
+    btn.appendChild(spanEmoji);
+    btn.appendChild(spanName);
     btn.addEventListener('click', () => {
       if (activeAuthors.has(m.id)) {
-        if (activeAuthors.size === 1) return; // 最後の1つは外せない
+        if (activeAuthors.size === 1) return;
         activeAuthors.delete(m.id);
         btn.classList.add('muted');
+        btn.setAttribute('aria-pressed', 'false');
       } else {
         activeAuthors.add(m.id);
         btn.classList.remove('muted');
+        btn.setAttribute('aria-pressed', 'true');
       }
       render();
     });
@@ -299,87 +442,197 @@
     if (!dateStr) return '';
     const [y, m, d] = dateStr.split('-');
     const days = ['日','月','火','水','木','金','土'];
-    const dt = new Date(`${dateStr}T12:00:00`);
+    const dt = new Date(dateStr + 'T12:00:00');
     const dow = days[dt.getDay()];
-    return `${y}年${parseInt(m)}月${parseInt(d)}日（${dow}）`;
+    return y + '年' + parseInt(m) + '月' + parseInt(d) + '日（' + dow + '）';
+  }
+
+  // ── localStorage ─────────────────────────
+  const LS_ENTRIES = 'kawaribanko_local_entries';
+  const LS_HIDDEN  = 'kawaribanko_hidden_ids';
+
+  function loadLocalEntries() {
+    try { return JSON.parse(localStorage.getItem(LS_ENTRIES) || '[]'); }
+    catch { return []; }
+  }
+
+  function saveLocalEntry(entry) {
+    const entries = loadLocalEntries();
+    const idx = entries.findIndex(e => e.id === entry.id);
+    if (idx >= 0) entries[idx] = entry;
+    else entries.push(entry);
+    localStorage.setItem(LS_ENTRIES, JSON.stringify(entries));
+  }
+
+  function getHiddenIds() {
+    try { return new Set(JSON.parse(localStorage.getItem(LS_HIDDEN) || '[]')); }
+    catch { return new Set(); }
+  }
+
+  function hideLocalEntry(id) {
+    const hidden = getHiddenIds();
+    hidden.add(id);
+    localStorage.setItem(LS_HIDDEN, JSON.stringify([...hidden]));
+  }
+
+  function restoreAllHidden() {
+    localStorage.removeItem(LS_HIDDEN);
+    render();
   }
 
   // ── エントリカード生成 ───────────────────
-  function buildCard(entry) {
+  function buildCard(entry, isLocal) {
     const m = getMember(entry.author);
     const card = document.createElement('div');
-    card.className = 'entry-card';
-    card.id = `entry-${entry.id}`;
+    card.className = 'entry-card' + (isLocal ? ' local-draft' : '');
+    card.id = 'entry-' + entry.id;
+    // 色はDOMプロパティで設定（style属性インジェクション防止）
     card.style.borderLeftColor = m.color;
-
-    // アバター
-    const avatarBg = m.color + '22'; // 透過背景
-    const avatarBorder = m.color + '66';
 
     // replyTo バッジ
     let replyHTML = '';
     if (entry.replyTo) {
-      const target = (data.entries || []).find(e => e.id === entry.replyTo);
+      const allLocal = loadLocalEntries();
+      const target = (data.entries || []).concat(allLocal).find(e => e.id === entry.replyTo);
       const label = target
-        ? `↩ ${getMember(target.author).name}「${target.title}」`
-        : `↩ ${entry.replyTo}`;
-      replyHTML = `<div class="reply-badge"><a href="#entry-${entry.replyTo}">${esc(label)}</a></div>`;
+        ? '↩ ' + getMember(target.author).name + '「' + (target.title || '') + '」'
+        : '↩ ' + entry.replyTo;
+      replyHTML = '<div class="reply-badge"><a href="#entry-' + esc(entry.replyTo) + '">' + esc(label) + '</a></div>';
     }
 
-    card.innerHTML = `
-      <div class="entry-header">
-        <div class="entry-avatar" style="background:${avatarBg};border-color:${avatarBorder}">
-          ${m.emoji}
-        </div>
-        <div class="entry-meta">
-          <div class="entry-author" style="color:${m.color}">${esc(m.name)}</div>
-          <div class="entry-date-row">
-            <span>${esc(fmtDate(entry.date))}</span>
-            <span class="entry-mood" title="気分">${entry.mood || ''}</span>
-          </div>
-        </div>
-      </div>
-      ${replyHTML}
-      <div class="entry-title">${esc(entry.title || '')}</div>
-      <div class="entry-body">${esc(entry.body || '')}</div>
-    `;
-    return card;
-  }
+    const draftHTML = isLocal
+      ? '<div class="draft-actions">'
+        + '<button class="draft-btn" data-action="hide" data-id="' + esc(entry.id) + '">非表示にする</button>'
+        + '<button class="draft-btn export-btn" data-action="export" data-id="' + esc(entry.id) + '">JSONに出力</button>'
+        + '</div>'
+      : '';
 
-  function esc(str) {
-    return String(str)
-      .replace(/&/g,'&amp;')
-      .replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;')
-      .replace(/"/g,'&quot;');
+    card.innerHTML =
+      (isLocal ? '<span class="local-badge">下書き（ローカル）</span>' : '')
+      + '<div class="entry-header">'
+      +   '<div class="entry-avatar js-avatar">' + esc(m.emoji) + '</div>'
+      +   '<div class="entry-meta">'
+      +     '<div class="entry-author js-author">' + esc(m.name) + '</div>'
+      +     '<div class="entry-date-row">'
+      +       '<span>' + esc(fmtDate(entry.date)) + '</span>'
+      +       '<span class="entry-mood">' + esc(entry.mood || '') + '</span>'
+      +     '</div>'
+      +   '</div>'
+      + '</div>'
+      + replyHTML
+      + '<div class="entry-title">' + esc(entry.title || '') + '</div>'
+      + '<div class="entry-body">' + esc(entry.body || '') + '</div>'
+      + draftHTML;
+
+    // 色をDOMで設定
+    const avatarEl = card.querySelector('.js-avatar');
+    avatarEl.style.background = m.color + '22';
+    avatarEl.style.borderColor = m.color + '66';
+    card.querySelector('.js-author').style.color = m.color;
+
+    // 返信リンク: フィルタで非表示の著者を自動解除
+    const replyLink = card.querySelector('.reply-badge a');
+    if (replyLink) {
+      replyLink.addEventListener('click', ev => {
+        const targetEl = document.getElementById('entry-' + entry.replyTo);
+        if (!targetEl) {
+          ev.preventDefault();
+          const allLocal = loadLocalEntries();
+          const targetEntry = (data.entries || []).concat(allLocal).find(e => e.id === entry.replyTo);
+          if (targetEntry && !activeAuthors.has(targetEntry.author)) {
+            activeAuthors.add(targetEntry.author);
+            const chip = chipsEl.querySelector('[data-author="' + targetEntry.author + '"]');
+            if (chip) { chip.classList.remove('muted'); chip.setAttribute('aria-pressed','true'); }
+            render();
+            setTimeout(() => {
+              const el = document.getElementById('entry-' + entry.replyTo);
+              if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 50);
+          }
+        }
+      });
+    }
+
+    // 下書きアクション
+    if (isLocal) {
+      card.querySelectorAll('.draft-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const action = btn.dataset.action;
+          const id = btn.dataset.id;
+          if (action === 'hide') {
+            hideLocalEntry(id);
+            render();
+          } else if (action === 'export') {
+            const found = loadLocalEntries().find(e => e.id === id);
+            if (found) showExportModal(found);
+          }
+        });
+      });
+    }
+
+    return card;
   }
 
   // ── レンダリング ─────────────────────────
   function render() {
-    const entries = (data.entries || [])
-      .filter(e => activeAuthors.has(e.author));
+    const localAll = loadLocalEntries();
+    const hiddenIds = getHiddenIds();
+    const hiddenCount = localAll.filter(e => hiddenIds.has(e.id)).length;
 
-    const sorted = [...entries].sort((a, b) => {
+    // 正本（元インデックスを _idx に保持）
+    const official = (data.entries || []).map((e, i) => Object.assign({}, e, { _local: false, _idx: i }));
+    // ローカル下書き（非表示除外）
+    const local = localAll
+      .filter(e => !hiddenIds.has(e.id))
+      .map((e, i) => Object.assign({}, e, { _local: true, _idx: official.length + i }));
+
+    // フィルタ適用（未知著者は activeAuthors に含まれているため通過する）
+    const combined = official.concat(local).filter(e => activeAuthors.has(e.author));
+
+    // ソート: 日付 → 正本優先 → 元インデックス
+    // 修正: 同日内は配列上の元インデックスで安定ソート（cycleキーは同日=同cycleで無効）
+    const sorted = combined.slice().sort((a, b) => {
       const cmp = (a.date || '').localeCompare(b.date || '');
-      return newestFirst ? -cmp || b.cycle - a.cycle : cmp || a.cycle - b.cycle;
+      if (cmp !== 0) return newestFirst ? -cmp : cmp;
+      // 同日: 正本→下書きの順（新しい順では逆）
+      if (a._local !== b._local) {
+        return newestFirst ? (a._local ? -1 : 1) : (a._local ? 1 : -1);
+      }
+      // 同種: 元インデックス順
+      return newestFirst ? b._idx - a._idx : a._idx - b._idx;
     });
 
+    // フィルタラベル
     const filterLabel = document.getElementById('filter-label');
-    filterLabel.textContent = activeAuthors.size === Object.keys(memberMap).length
+    const allKnownActive = (data.members || []).every(m => activeAuthors.has(m.id));
+    filterLabel.textContent = allKnownActive
       ? 'すべて表示'
-      : [...activeAuthors].map(id => getMember(id).name).join('・') + ' のみ';
+      : [...activeAuthors].filter(id => memberMap[id]).map(id => getMember(id).name).join('・') + ' のみ';
 
+    // 件数
     const countEl = document.getElementById('entry-count');
-    countEl.textContent = `${sorted.length} 件`;
+    const localShown = sorted.filter(e => e._local).length;
+    countEl.textContent = localShown > 0
+      ? sorted.length + ' 件（うち下書き ' + localShown + ' 件）'
+      : sorted.length + ' 件';
+
+    // 非表示下書き案内
+    const hiddenNoticeEl = document.getElementById('hidden-notice');
+    if (hiddenCount > 0) {
+      hiddenNoticeEl.innerHTML = '<p class="hidden-notice">非表示の下書きが ' + hiddenCount + ' 件あります。<button id="restore-hidden">すべて表示に戻す</button></p>';
+      const restoreBtn = document.getElementById('restore-hidden');
+      if (restoreBtn) restoreBtn.addEventListener('click', restoreAllHidden);
+    } else {
+      hiddenNoticeEl.innerHTML = '';
+    }
 
     const tl = document.getElementById('timeline');
     if (sorted.length === 0) {
       tl.innerHTML = '<div class="state-msg"><div class="icon">📭</div>表示できるエントリがありません</div>';
       return;
     }
-
     tl.innerHTML = '';
-    sorted.forEach(e => tl.appendChild(buildCard(e)));
+    sorted.forEach(e => tl.appendChild(buildCard(e, e._local)));
   }
 
   render();
@@ -391,6 +644,213 @@
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 100);
   }
+
+  // ── 投稿フォーム ─────────────────────────
+  const composeToggle = document.getElementById('compose-toggle');
+  const composePanel  = document.getElementById('compose-panel');
+  const formAuthor    = document.getElementById('form-author');
+  const formCycle     = document.getElementById('form-cycle');
+  const formDate      = document.getElementById('form-date');
+  const formMood      = document.getElementById('form-mood');
+  const formTitle     = document.getElementById('form-title');
+  const formBody      = document.getElementById('form-body');
+  const formReplyTo   = document.getElementById('form-reply-to');
+  const formIdPreview = document.getElementById('form-id-preview');
+  const formError     = document.getElementById('form-error');
+
+  // 著者選択肢
+  (data.members || []).forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m.id;
+    opt.textContent = m.emoji + ' ' + m.name;
+    formAuthor.appendChild(opt);
+  });
+
+  // 返信先選択肢
+  (data.entries || []).forEach(e => {
+    const m = getMember(e.author);
+    const opt = document.createElement('option');
+    opt.value = e.id;
+    opt.textContent = e.id + ' — ' + m.name + '「' + (e.title || '').slice(0,20) + '…」';
+    formReplyTo.appendChild(opt);
+  });
+
+  // デフォルト値
+  const maxCycle = Math.max(0, ...(data.entries || []).map(e => e.cycle || 0));
+  formCycle.value = maxCycle + 1;
+  const today = new Date();
+  formDate.value = today.getFullYear() + '-'
+    + String(today.getMonth() + 1).padStart(2,'0') + '-'
+    + String(today.getDate()).padStart(2,'0');
+
+  function updateIdPreview() {
+    const author = formAuthor.value;
+    const cycle  = parseInt(formCycle.value, 10);
+    formIdPreview.textContent = (author && !isNaN(cycle)) ? 'c' + cycle + '-' + author : '—';
+  }
+  formAuthor.addEventListener('change', updateIdPreview);
+  formCycle.addEventListener('input', updateIdPreview);
+  updateIdPreview();
+
+  composeToggle.addEventListener('click', () => {
+    const open = !composePanel.hidden;
+    composePanel.hidden = open;
+    composeToggle.classList.toggle('open', !open);
+    composeToggle.textContent = open ? '✏️ 日記を書く' : '✖ 閉じる';
+  });
+
+  document.getElementById('form-cancel').addEventListener('click', () => {
+    composePanel.hidden = true;
+    composeToggle.classList.remove('open');
+    composeToggle.textContent = '✏️ 日記を書く';
+    formError.textContent = '';
+  });
+
+  document.getElementById('form-submit').addEventListener('click', () => {
+    formError.textContent = '';
+    const author  = formAuthor.value;
+    const cycle   = parseInt(formCycle.value, 10);
+    const date    = formDate.value;
+    const mood    = formMood.value.trim();
+    const title   = formTitle.value.trim();
+    const body    = formBody.value.trim();
+    const replyTo = formReplyTo.value || null;
+
+    if (!author)  { formError.textContent = '書き手を選んでください'; return; }
+    if (isNaN(cycle) || cycle < 1 || cycle > 7) { formError.textContent = 'サイクル番号は1〜7で入力してください'; return; }
+    if (!date)    { formError.textContent = '日付を入力してください'; return; }
+    if (!title)   { formError.textContent = 'タイトルを入力してください'; return; }
+    if (!body)    { formError.textContent = '本文を入力してください'; return; }
+
+    const id = 'c' + cycle + '-' + author;
+
+    // ID重複チェック
+    const existingIds = (data.entries || []).map(e => e.id).concat(loadLocalEntries().map(e => e.id));
+    if (existingIds.includes(id)) {
+      formError.textContent = 'ID「' + id + '」はすでに存在します。サイクル番号または書き手を変えてください';
+      return;
+    }
+
+    const entry = { id, cycle, author, date, mood: mood || '📝', title, body, replyTo };
+    saveLocalEntry(entry);
+    render();
+
+    // フォームリセット
+    formMood.value = '';
+    formTitle.value = '';
+    formBody.value = '';
+    formReplyTo.value = '';
+    updateIdPreview();
+
+    composePanel.hidden = true;
+    composeToggle.classList.remove('open');
+    composeToggle.textContent = '✏️ 日記を書く';
+
+    setTimeout(() => {
+      const el = document.getElementById('entry-' + id);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+  });
+
+  // ── エクスポートモーダル ──────────────────
+  const exportOverlay = document.getElementById('export-overlay');
+  const exportWarning = document.getElementById('export-warning');
+  const exportPre     = document.getElementById('export-pre');
+  let currentExportEntry = null;
+
+  function showExportModal(entry) {
+    currentExportEntry = entry;
+
+    // 検証
+    const officialIds = new Set((data.entries || []).map(e => e.id));
+    const localIds    = new Set(loadLocalEntries().map(e => e.id));
+    const warnings = [];
+
+    if (officialIds.has(entry.id)) {
+      warnings.push('⚠️ ID「' + entry.id + '」はすでに正本（diary.json）に存在します。');
+    }
+    if (entry.replyTo) {
+      const allIds = new Set([...officialIds, ...localIds]);
+      if (!allIds.has(entry.replyTo)) {
+        warnings.push('⚠️ replyTo「' + entry.replyTo + '」に対応するエントリが見つかりません。');
+      }
+    }
+    if (!/^c\d+-[a-z]+$/.test(entry.id)) {
+      warnings.push('⚠️ ID「' + entry.id + '」が c{サイクル番号}-{author} の形式ではありません。');
+    }
+    if (!entry.title || !entry.body) {
+      warnings.push('⚠️ タイトルまたは本文が空です。');
+    }
+
+    if (warnings.length > 0) {
+      exportWarning.textContent = warnings.join('\n');
+      exportWarning.hidden = false;
+    } else {
+      exportWarning.hidden = true;
+    }
+
+    // 出力オブジェクト（内部プロパティを除外）
+    const output = {
+      id: entry.id,
+      cycle: entry.cycle,
+      author: entry.author,
+      date: entry.date,
+      mood: entry.mood,
+      title: entry.title,
+      body: entry.body,
+      replyTo: entry.replyTo || null
+    };
+    exportPre.textContent = JSON.stringify(output, null, 2);
+
+    exportOverlay.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+
+  document.getElementById('export-close').addEventListener('click', () => {
+    exportOverlay.hidden = true;
+    document.body.style.overflow = '';
+    currentExportEntry = null;
+  });
+
+  exportOverlay.addEventListener('click', ev => {
+    if (ev.target === exportOverlay) {
+      exportOverlay.hidden = true;
+      document.body.style.overflow = '';
+      currentExportEntry = null;
+    }
+  });
+
+  document.getElementById('export-copy').addEventListener('click', async () => {
+    const text = exportPre.textContent;
+    const btn = document.getElementById('export-copy');
+    try {
+      await navigator.clipboard.writeText(text);
+      btn.textContent = 'コピーしました ✓';
+    } catch {
+      // Clipboard API が使えない環境向けフォールバック
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      btn.textContent = 'コピーしました ✓';
+    }
+    setTimeout(() => { btn.textContent = 'クリップボードにコピー'; }, 2000);
+  });
+
+  document.getElementById('export-dl').addEventListener('click', () => {
+    if (!currentExportEntry) return;
+    const blob = new Blob([exportPre.textContent], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = currentExportEntry.id + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
 })();
 </script>
 </body>
