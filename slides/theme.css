@@ -85,11 +85,20 @@ section.lead p  { color: var(--sub); font-size: 1.1em; }
 /* lead は flex column なので inline-block が効かず、下線が全幅に伸びる */
 section.lead h2 { align-self: center; }
 
-/* 大きな数字を見せるスライド */
-section.stat strong {
+/* 大きな数字を見せるスライド。
+   箇条書きの中の強調まで巨大化しないよう、段落直下の strong だけを対象にする。 */
+section.stat p strong {
   font-size: 2.4em;
   line-height: 1.1;
   display: inline-block;
+}
+section.stat li strong { font-size: 1em; }
+
+/* 画像スライドの注記。事実の但し書きを小さく添えるため */
+section .note {
+  font-size: 0.62em;
+  color: var(--sub);
+  line-height: 1.45;
 }
 
 section footer, section::after { color: var(--sub); font-size: 0.6em; }
