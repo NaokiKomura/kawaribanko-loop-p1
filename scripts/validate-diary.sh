@@ -105,6 +105,65 @@ fi
 
 # ────────────────────────────────────────
 echo ""
+echo "=== ブラウザ描画チェック (headless Chrome) ==="
+
+CHROME_BIN=$(which google-chrome 2>/dev/null || which chromium-browser 2>/dev/null || which chromium 2>/dev/null || echo "")
+if [ -z "$CHROME_BIN" ]; then
+  echo "⏭️  headless Chrome が見つかりません — 描画チェックをスキップ"
+else
+  RENDER_PORT=18811
+  python3 -m http.server "$RENDER_PORT" --directory app >/dev/null 2>&1 &
+  RENDER_PID=$!
+  # サーバ起動を待つ（最大1.5秒）
+  for _ in 1 2 3; do
+    curl -sf "http://127.0.0.1:$RENDER_PORT/" >/dev/null && break
+    sleep 0.5
+  done
+
+  DOM=$("$CHROME_BIN" --headless=new --no-sandbox --disable-gpu \
+    --virtual-time-budget=6000 \
+    --dump-dom "http://127.0.0.1:$RENDER_PORT/" 2>/tmp/chrome_validate_err.txt || true)
+
+  kill "$RENDER_PID" 2>/dev/null || true
+  wait "$RENDER_PID" 2>/dev/null || true
+
+  if [ -z "$DOM" ]; then
+    echo "⚠️  DOM ダンプ取得失敗 — 描画チェックをスキップ"
+  else
+    # 9. エントリカード数チェック
+    ENTRY_COUNT=$(jq '.entries | length' "$DIARY")
+    CARD_COUNT=$(echo "$DOM" | grep -cE 'class="entry-card' || true)
+    if [ "$CARD_COUNT" -ge "$ENTRY_COUNT" ]; then
+      pass "タイムライン: entry-card ${CARD_COUNT} 件描画 (diary.json: ${ENTRY_COUNT} 件)"
+    else
+      fail "タイムラインのカードが不足 — 期待: ${ENTRY_COUNT}+, 実際: ${CARD_COUNT}"
+    fi
+
+    # 10. [hidden] CSS 上書きチェック（ソース検査）
+    # .export-overlay:not([hidden]) 形式か、[hidden]{display:none} 補正があればOK
+    if grep -qE 'export-overlay:not\(\[hidden\]\)' "$INDEX"; then
+      pass "[hidden] CSS 修正済み: .export-overlay:not([hidden]) 形式を使用"
+    elif grep -qE '\[hidden\][^{]*\{[^}]*display[^}]*none' "$INDEX"; then
+      pass "[hidden] CSS 修正済み: [hidden]{display:none} 上書きあり"
+    elif grep -A3 '\.export-overlay\s*{' "$INDEX" 2>/dev/null | grep -qE 'display\s*:\s*flex'; then
+      fail ".export-overlay { display: flex } が [hidden] を上書きしています（モーダルが起動時から表示される）"
+    else
+      pass "[hidden] CSS の衝突なし"
+    fi
+
+    # 11. JS 実行エラーチェック（dbus などの環境エラーは除外）
+    JS_ERRORS=$(grep -iE 'SyntaxError|ReferenceError|TypeError|Uncaught' \
+      /tmp/chrome_validate_err.txt 2>/dev/null || true)
+    if [ -z "$JS_ERRORS" ]; then
+      pass "JS 実行エラーなし"
+    else
+      fail "JS 実行エラーが検出されました: $JS_ERRORS"
+    fi
+  fi
+fi
+
+# ────────────────────────────────────────
+echo ""
 if [ "$ERRORS" -eq 0 ]; then
   echo "✅ 全チェック通過"
 else

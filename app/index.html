@@ -217,6 +217,8 @@
     /* ── エクスポートモーダル ────── */
     .export-overlay {
       position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 200;
+    }
+    .export-overlay:not([hidden]) {
       display: flex; align-items: center; justify-content: center; padding: 1.5rem;
     }
     .export-box {
@@ -252,6 +254,49 @@
     }
     .export-dl-btn:hover, .export-close-btn:hover { background: var(--bg); }
 
+    /* ── サイクルヘッダー ───────────────── */
+    .cycle-header {
+      display: flex; align-items: center; gap: .6rem;
+      margin: 1.5rem 0 .6rem;
+      font-size: .8rem; color: var(--text-sub);
+    }
+    .cycle-header::before, .cycle-header::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+    .cycle-header-label { font-weight: 700; font-size: .82rem; color: var(--text); white-space: nowrap; }
+    .cycle-status { display: flex; gap: .25rem; align-items: center; }
+    .cycle-dot {
+      width: 9px; height: 9px; border-radius: 50%; border: 2px solid; flex-shrink: 0;
+      cursor: default;
+    }
+
+    /* ── スレッドビュー ─────────────────── */
+    .entry-card.threaded-child {
+      border-left-style: solid !important;
+      border-left-width: 4px !important;
+    }
+
+    /* ── 次の番バー ─────────────────────── */
+    .next-turn-bar {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: .6rem 1.2rem; margin-bottom: 1rem; font-size: .85rem;
+      display: flex; align-items: center; gap: .5rem; color: var(--text-sub);
+    }
+    .next-turn-bar .turn-highlight { font-weight: 700; color: var(--text); }
+
+    /* ── ビュー切替ボタン ───────────────── */
+    .view-bar {
+      max-width: 720px; margin: 0 auto .25rem; padding: 0 1.25rem;
+      display: flex; align-items: center; gap: .5rem;
+    }
+    .view-btn {
+      font-size: .78rem; padding: .22rem .65rem; border-radius: 99px;
+      border: 1px solid var(--border); background: var(--surface);
+      cursor: pointer; color: var(--text-sub); transition: background .12s, color .12s;
+    }
+    .view-btn:hover { border-color: #bbb; }
+    .view-btn.active { background: var(--text); color: var(--surface); border-color: var(--text); }
+
     /* ── レスポンシブ ─────────────── */
     @media (max-width: 480px) {
       header { padding: 1rem; gap: 1rem; }
@@ -274,6 +319,11 @@
 <div class="filter-bar">
   <span class="filter-label" id="filter-label">すべて表示</span>
   <button id="sort-toggle">古い順 ↑</button>
+</div>
+
+<div class="view-bar">
+  <button class="view-btn active" id="view-flat">フラット</button>
+  <button class="view-btn" id="view-thread">スレッド</button>
 </div>
 
 <main>
@@ -437,6 +487,26 @@
     render();
   });
 
+  // ── ビュー切替（フラット / スレッド）─────────
+  const viewFlat   = document.getElementById('view-flat');
+  const viewThread = document.getElementById('view-thread');
+  viewFlat.addEventListener('click', () => {
+    if (threadMode) {
+      threadMode = false;
+      viewFlat.classList.add('active');
+      viewThread.classList.remove('active');
+      render();
+    }
+  });
+  viewThread.addEventListener('click', () => {
+    if (!threadMode) {
+      threadMode = true;
+      viewThread.classList.add('active');
+      viewFlat.classList.remove('active');
+      render();
+    }
+  });
+
   // ── 日付フォーマット ─────────────────────
   function fmtDate(dateStr) {
     if (!dateStr) return '';
@@ -530,7 +600,7 @@
     avatarEl.style.borderColor = m.color + '66';
     card.querySelector('.js-author').style.color = m.color;
 
-    // 返信リンク: フィルタで非表示の著者を自動解除
+    // 返信リンク: フィルタ非表示・非表示下書きを自動解除して飛ぶ
     const replyLink = card.querySelector('.reply-badge a');
     if (replyLink) {
       replyLink.addEventListener('click', ev => {
@@ -539,16 +609,30 @@
           ev.preventDefault();
           const allLocal = loadLocalEntries();
           const targetEntry = (data.entries || []).concat(allLocal).find(e => e.id === entry.replyTo);
-          if (targetEntry && !activeAuthors.has(targetEntry.author)) {
+          if (!targetEntry) return;
+          let needsRender = false;
+          // 著者フィルタで非表示なら解除
+          if (!activeAuthors.has(targetEntry.author)) {
             activeAuthors.add(targetEntry.author);
-            const chip = chipsEl.querySelector('[data-author="' + targetEntry.author + '"]');
+            // querySelector の CSS セレクタインジェクションを避けるため dataset で比較
+            const chip = [...chipsEl.children].find(b => b.dataset.author === targetEntry.author);
             if (chip) { chip.classList.remove('muted'); chip.setAttribute('aria-pressed','true'); }
-            render();
-            setTimeout(() => {
-              const el = document.getElementById('entry-' + entry.replyTo);
-              if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 50);
+            needsRender = true;
           }
+          // 非表示下書きなら再表示
+          const isLocal = allLocal.some(l => l.id === targetEntry.id);
+          if (isLocal) {
+            const hidden = getHiddenIds();
+            if (hidden.has(targetEntry.id)) {
+              showHiddenEntry(targetEntry.id);
+              needsRender = true;
+            }
+          }
+          if (needsRender) render();
+          setTimeout(() => {
+            const el = document.getElementById('entry-' + entry.replyTo);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 50);
         }
       });
     }
@@ -573,6 +657,116 @@
     return card;
   }
 
+  // ── 特定の非表示下書きを再表示 ──────────────
+  function showHiddenEntry(id) {
+    const hidden = getHiddenIds();
+    hidden.delete(id);
+    localStorage.setItem(LS_HIDDEN, JSON.stringify([...hidden]));
+  }
+
+  // ── サイクルヘッダー生成 ─────────────────────
+  function buildCycleHeader(cycle, officialByCycle) {
+    const turnOrder = cycle === 0 ? ['owner'] : ['dev', 'feedback', 'slides'];
+    const writtenAuthors = officialByCycle[cycle] || new Set();
+    const el = document.createElement('div');
+    el.className = 'cycle-header';
+    const label = document.createElement('span');
+    label.className = 'cycle-header-label';
+    label.textContent = cycle === 0 ? 'はじまり' : 'サイクル ' + cycle;
+    el.appendChild(label);
+    const statusEl = document.createElement('span');
+    statusEl.className = 'cycle-status';
+    turnOrder.forEach(authorId => {
+      const m = getMember(authorId);
+      const dot = document.createElement('span');
+      dot.className = 'cycle-dot';
+      const written = writtenAuthors.has(authorId);
+      dot.title = m.emoji + ' ' + m.name + (written ? '  記入済み' : '  未記入');
+      dot.style.borderColor = m.color;
+      if (written) dot.style.background = m.color;
+      statusEl.appendChild(dot);
+    });
+    el.appendChild(statusEl);
+    return el;
+  }
+
+  // ── サイクルグループ描画 ─────────────────────
+  function renderGrouped(tl, sorted) {
+    // 正本エントリのサイクル別記入者マップ
+    const officialByCycle = {};
+    (data.entries || []).forEach(e => {
+      const c = e.cycle ?? 0;
+      if (!officialByCycle[c]) officialByCycle[c] = new Set();
+      officialByCycle[c].add(e.author);
+    });
+    // 表示エントリをサイクルでグループ化
+    const byCycle = {};
+    sorted.forEach(e => {
+      const c = e.cycle ?? 0;
+      if (!byCycle[c]) byCycle[c] = [];
+      byCycle[c].push(e);
+    });
+    const cycles = Object.keys(byCycle).map(Number)
+      .sort((a, b) => newestFirst ? b - a : a - b);
+    cycles.forEach(cycle => {
+      tl.appendChild(buildCycleHeader(cycle, officialByCycle));
+      byCycle[cycle].forEach(e => tl.appendChild(buildCard(e, e._local)));
+    });
+  }
+
+  // ── スレッド描画 ─────────────────────────────
+  function renderThreaded(tl, sorted) {
+    const INDENT = 1.6; // rem per nesting level
+    const MAX_DEPTH = 5;
+    // エントリ辞書と子リスト
+    const byId = {};
+    const childrenOf = {};
+    sorted.forEach(e => { byId[e.id] = e; childrenOf[e.id] = []; });
+    sorted.forEach(e => {
+      if (e.replyTo && byId[e.replyTo]) childrenOf[e.replyTo].push(e);
+    });
+    // ルート: 可視エントリへのreplyToを持たないもの
+    const roots = sorted.filter(e => !e.replyTo || !byId[e.replyTo]);
+    const visited = new Set();
+    function renderEntry(entry, depth) {
+      if (visited.has(entry.id)) return; // 循環参照防止
+      visited.add(entry.id);
+      const card = buildCard(entry, entry._local);
+      const vd = Math.min(depth, MAX_DEPTH);
+      card.style.marginLeft = (vd * INDENT) + 'rem';
+      if (depth > 0) {
+        card.classList.add('threaded-child');
+        card.style.borderLeftColor = getMember(entry.author).color + '99';
+      }
+      tl.appendChild(card);
+      (childrenOf[entry.id] || []).forEach(child => renderEntry(child, depth + 1));
+    }
+    roots.forEach(r => renderEntry(r, 0));
+  }
+
+  // ── 次の番を表示 ─────────────────────────────
+  function updateNextTurnDisplay() {
+    const officialEntries = data.entries || [];
+    const turnOrder = ['dev', 'feedback', 'slides'];
+    const maxCycle = Math.max(0, ...officialEntries.map(e => e.cycle || 0));
+    if (maxCycle === 0) return;
+    const writtenInMax = new Set(
+      officialEntries.filter(e => e.cycle === maxCycle).map(e => e.author)
+    );
+    let nextAuthor = null;
+    let nextCycle = maxCycle;
+    for (const a of turnOrder) {
+      if (!writtenInMax.has(a)) { nextAuthor = a; break; }
+    }
+    if (!nextAuthor) { nextAuthor = 'dev'; nextCycle = maxCycle + 1; }
+    const m = getMember(nextAuthor);
+    document.getElementById('header-subtitle').textContent =
+      'サイクル ' + nextCycle + ' — 次: ' + m.emoji + ' ' + m.name;
+  }
+
+  // ── 表示モード ───────────────────────────────
+  let threadMode = false;
+
   // ── レンダリング ─────────────────────────
   function render() {
     const localAll = loadLocalEntries();
@@ -590,15 +784,12 @@
     const combined = official.concat(local).filter(e => activeAuthors.has(e.author));
 
     // ソート: 日付 → 正本優先 → 元インデックス
-    // 修正: 同日内は配列上の元インデックスで安定ソート（cycleキーは同日=同cycleで無効）
     const sorted = combined.slice().sort((a, b) => {
       const cmp = (a.date || '').localeCompare(b.date || '');
       if (cmp !== 0) return newestFirst ? -cmp : cmp;
-      // 同日: 正本→下書きの順（新しい順では逆）
       if (a._local !== b._local) {
         return newestFirst ? (a._local ? -1 : 1) : (a._local ? 1 : -1);
       }
-      // 同種: 元インデックス順
       return newestFirst ? b._idx - a._idx : a._idx - b._idx;
     });
 
@@ -632,15 +823,21 @@
       return;
     }
     tl.innerHTML = '';
-    sorted.forEach(e => tl.appendChild(buildCard(e, e._local)));
+    if (threadMode) {
+      renderThreaded(tl, sorted);
+    } else {
+      renderGrouped(tl, sorted);
+    }
   }
 
   render();
+  updateNextTurnDisplay();
 
   // ── URL ハッシュへスクロール ──────────────
   if (location.hash) {
     setTimeout(() => {
-      const el = document.querySelector(location.hash);
+      const hashId = location.hash.slice(1);
+      const el = hashId ? document.getElementById(hashId) : null;
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 100);
   }
@@ -666,14 +863,24 @@
     formAuthor.appendChild(opt);
   });
 
-  // 返信先選択肢
-  (data.entries || []).forEach(e => {
-    const m = getMember(e.author);
-    const opt = document.createElement('option');
-    opt.value = e.id;
-    opt.textContent = e.id + ' — ' + m.name + '「' + (e.title || '').slice(0,20) + '…」';
-    formReplyTo.appendChild(opt);
-  });
+  // 返信先選択肢（正本＋下書き）
+  function populateReplyToSelect() {
+    const allLocal = loadLocalEntries();
+    const hiddenIds = getHiddenIds();
+    formReplyTo.innerHTML = '<option value="">なし</option>';
+    const allEntries = (data.entries || []).concat(
+      allLocal.filter(e => !hiddenIds.has(e.id))
+    );
+    allEntries.forEach(e => {
+      const m = getMember(e.author);
+      const isLocalEntry = allLocal.some(l => l.id === e.id);
+      const opt = document.createElement('option');
+      opt.value = e.id;
+      opt.textContent = (isLocalEntry ? '[下書き] ' : '') + e.id + ' — ' + m.name + '「' + (e.title || '').slice(0, 20) + '…」';
+      formReplyTo.appendChild(opt);
+    });
+  }
+  populateReplyToSelect();
 
   // デフォルト値
   const maxCycle = Math.max(0, ...(data.entries || []).map(e => e.cycle || 0));
