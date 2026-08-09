@@ -94,6 +94,29 @@ section.stat p strong {
 }
 section.stat li strong { font-size: 1em; }
 
+/* サイクルドットを本文中で再現する行。
+   画像が使えない（検証コンテナに日本語フォントが無い）ため、
+   ●＝記入済み / ○＝未記入 を文字で見せる。 */
+section .dotline {
+  font-size: 1.5em;
+  letter-spacing: 0.14em;
+  line-height: 1.3;
+  margin: 0.2em 0;
+}
+section .dotline .filled { color: var(--accent); }
+section .dotline .empty  { color: var(--rule); }
+
+/* 実際の DOM 出力など、生の文字列をそのまま見せるための小さな等幅ブロック */
+section .dump {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 0.6em;
+  background: #efe9e1;
+  border-left: 4px solid var(--rule);
+  padding: 0.5em 0.8em;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
 /* 画像スライドの注記。事実の但し書きを小さく添えるため */
 section .note {
   font-size: 0.62em;
