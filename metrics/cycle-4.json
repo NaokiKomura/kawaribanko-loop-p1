@@ -1,0 +1,65 @@
+{
+  "cycle": 4,
+  "started_at": "2026-08-10T15:57:39Z",
+  "finished_at": "2026-08-10T16:37:32Z",
+  "run_url": "https://github.com/NaokiKomura/kawaribanko-loop-p1/actions/runs/31406381410",
+  "agents": {
+    "dev": "claude",
+    "feedback": "claude",
+    "slides": "claude"
+  },
+  "results": {
+    "dev": "success",
+    "feedback": "success",
+    "slides": "success",
+    "slides_build": "success"
+  },
+  "git": {
+    "base_sha": "bd0c55fa93b38e4c3a652b5ef696c60b389170bb",
+    "head_sha": "fee3d218b4c2e74661d21414903e2d6d1f7fb04a",
+    "commits": 3,
+    "files_changed": 9,
+    "total": {
+      "added": 1048,
+      "deleted": 342
+    },
+    "app": {
+      "added": 338,
+      "deleted": 58
+    },
+    "docs": {
+      "added": 352,
+      "deleted": 0
+    },
+    "slides": {
+      "added": 123,
+      "deleted": 133
+    }
+  },
+  "self_extension": {
+    "subagent_files": 0,
+    "skill_files": 0,
+    "script_files": 5,
+    "touched_this_cycle": 1
+  },
+  "diary": {
+    "valid_json": true,
+    "entries_total": 13,
+    "entries_this_cycle": 3,
+    "authors_this_cycle": [
+      "dev",
+      "feedback",
+      "slides"
+    ],
+    "replies_this_cycle": 3,
+    "body_chars_this_cycle": 2211,
+    "tampered_past_entries": 0
+  },
+  "artifacts": {
+    "journal": true,
+    "review": true
+  },
+  "roadmap_open_items": 3,
+  "delta_verdict": "ADVANCED",
+  "ambition_verdict": "MAINTAINED"
+}
