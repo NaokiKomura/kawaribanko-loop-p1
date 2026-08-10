@@ -105,6 +105,60 @@ fi
 
 # ────────────────────────────────────────
 echo ""
+echo "=== CSS [hidden] 要素の display 上書き検査 (静的解析) ==="
+
+# Node.js を使った静的 CSS 解析: [hidden] 属性が付いている要素のセレクタに
+# :not([hidden]) ガードなしで display を非-none に設定しているルールを検出する。
+CSS_CHECK=$(node -e "
+const fs = require('fs');
+const html = fs.readFileSync('$INDEX', 'utf8');
+const cssMatch = html.match(/<style>([\\s\\S]*?)<\\/style>/);
+if (!cssMatch) { process.stdout.write('PASS'); process.exit(0); }
+const css = cssMatch[1];
+
+// [hidden] 属性を持つ要素の id と class (アプリの実態に合わせてリスト化)
+const hiddenIds     = ['compose-panel', 'export-warning', 'export-overlay'];
+const hiddenClasses = ['compose-panel', 'export-warning', 'export-overlay'];
+
+// CSS ルールを「セレクタ { プロパティ }」単位で分解
+const ruleRe = /([^{}@]+)\\{([^{}]*)\\}/g;
+const violations = [];
+let match;
+while ((match = ruleRe.exec(css)) !== null) {
+  const sel  = match[1].trim();
+  const body = match[2];
+  // display が non-none のルールだけ対象
+  const dm = body.match(/display\\s*:\\s*([^;\\n]+)/i);
+  if (!dm) continue;
+  const dv = dm[1].trim().toLowerCase();
+  if (dv === 'none' || dv === '') continue;
+  // :not([hidden]) ガードがあればセーフ
+  if (sel.includes(':not([hidden])')) continue;
+  // 対象要素のセレクタに一致するか確認
+  for (const id of hiddenIds) {
+    if (sel.includes('#' + id) || sel.includes('.' + id)) {
+      violations.push('\"' + sel.replace(/\\s+/g,' ') + '\" が display:' + dv + ' を設定（:not([hidden]) ガードなし）');
+    }
+  }
+}
+if (violations.length > 0) {
+  process.stdout.write('FAIL:' + violations.join(' / '));
+} else {
+  process.stdout.write('PASS');
+}
+" 2>&1 || true)
+
+if [ "$CSS_CHECK" = "PASS" ]; then
+  pass "[hidden] 要素に display 上書きなし"
+elif echo "$CSS_CHECK" | grep -q '^FAIL:'; then
+  VIOL=$(echo "$CSS_CHECK" | sed 's/^FAIL://')
+  fail "[hidden] CSS 上書き検出: $VIOL"
+else
+  echo "⚠️  CSS 静的解析エラー: $CSS_CHECK"
+fi
+
+# ────────────────────────────────────────
+echo ""
 echo "=== ブラウザ描画チェック (headless Chrome) ==="
 
 CHROME_BIN=$(which google-chrome 2>/dev/null || which chromium-browser 2>/dev/null || which chromium 2>/dev/null || echo "")
@@ -139,19 +193,7 @@ else
       fail "タイムラインのカードが不足 — 期待: ${ENTRY_COUNT}+, 実際: ${CARD_COUNT}"
     fi
 
-    # 10. [hidden] CSS 上書きチェック（ソース検査）
-    # .export-overlay:not([hidden]) 形式か、[hidden]{display:none} 補正があればOK
-    if grep -qE 'export-overlay:not\(\[hidden\]\)' "$INDEX"; then
-      pass "[hidden] CSS 修正済み: .export-overlay:not([hidden]) 形式を使用"
-    elif grep -qE '\[hidden\][^{]*\{[^}]*display[^}]*none' "$INDEX"; then
-      pass "[hidden] CSS 修正済み: [hidden]{display:none} 上書きあり"
-    elif grep -A3 '\.export-overlay\s*{' "$INDEX" 2>/dev/null | grep -qE 'display\s*:\s*flex'; then
-      fail ".export-overlay { display: flex } が [hidden] を上書きしています（モーダルが起動時から表示される）"
-    else
-      pass "[hidden] CSS の衝突なし"
-    fi
-
-    # 11. JS 実行エラーチェック（dbus などの環境エラーは除外）
+    # 10. JS 実行エラーチェック（dbus などの環境エラーは除外）
     JS_ERRORS=$(grep -iE 'SyntaxError|ReferenceError|TypeError|Uncaught' \
       /tmp/chrome_validate_err.txt 2>/dev/null || true)
     if [ -z "$JS_ERRORS" ]; then

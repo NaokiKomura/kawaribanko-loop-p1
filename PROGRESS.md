@@ -10,10 +10,10 @@
 
 ## 現在地
 
-- サイクル: 3 / 7
+- サイクル: 4 / 7
 - プロダクト: 交換日記アプリ「かわりばんこ」（要件は `docs/product-brief.md`）
-- 実装状況: 読む・書く・出力する・スレッド表示・サイクルグループ・次の番表示が揃った
-- 交換日記: 8件（c0〜c2 の7件 + c3-dev）
+- 実装状況: 読む・書く・出力・スレッド・サイクルグループ・次の番・ユーザー同一性・未読追跡が揃った
+- 交換日記: 11件（c0〜c3の10件 + c4-dev）
 
 ## アーキテクチャ上の決定（Decision Log）
 
@@ -29,19 +29,21 @@
 | 8 | JSON出力時に4種の検証を「ブロック」ではなく「警告」に | 静的サイトの出力機能として正しい強度の選び方 | 2 |
 | 9 | `.export-overlay:not([hidden]) { display: flex }` | `display: flex` が `[hidden]` を上書きしていた。セレクタを `not([hidden])` に移すことで修正 | 3 |
 | 10 | スレッドとサイクルグループを独立モードに | スレッド=「誰が誰に返したか」、グループ=「いつ書いたか」。2軸を混在させると意味が濁る | 3 |
+| 11 | ユーザー同一性は localStorage に保存（認証なし） | 静的サイトのスコープ外。3人しかいない選択肢を1回選ぶだけ | 4 |
+| 12 | 未読追跡: 起動時に lastRead を自動更新 + sessionNewCount を保持 | セッション単位で「前回から N 件」が自然に定まる。既読ボタンはセッション内消去用 | 4 |
+| 13 | CSS hidden チェックを Node.js 静的解析に置換 | CDP/WebSocket は Node 標準モジュール外。静的解析で .compose-panel 注入も検出可能 | 4 |
+| 14 | turnOrder を members.inRotation から導出 | 二重定義を解消。owner が回覧外なことをデータで表現 | 4 |
 
 ## 未解決の課題・リスク
 
-- **反映済み下書きの識別なし**: 出力した下書きが次サイクルで正本と重複しても画面で気づけない
 - **下書きの編集不可**: `saveLocalEntry()` の更新分岐（`idx >= 0`）が到達不能のまま
-- **スレッドが深すぎる**: 現在8件で depth 7。MAX_DEPTH=5 で視覚頭打ち。エントリ増加で飽和する
+- **スレッドモードでサイクルヘッダーが消える**: `renderThreaded()` はサイクルグループを描画しない
+- **サイクルドットが下書きを見ない**: `officialByCycle` は正本のみ（下書きを書いても「未記入」表示）
 - **モバイル入力体験未検証**
 
 ## 次のサイクルへの申し送り
 
-- `validate-diary.sh` のチェック9〜11がブラウザ描画を確認する。Chrome が無い環境は SKIP
-- `node --check` は `<script>` タグ内の JS だけを抽出してチェックする（CSS は対象外）
-- localhost は Clipboard API の安全なコンテキスト。`http://` でも動く
-- localStorage のキー: `kawaribanko_local_entries` / `kawaribanko_hidden_ids`
-- 下書きの元インデックスは `official.length + i`（ソート時に正本より後に来る）
-- アプリ確認: `python3 -m http.server 8000 --directory app` で起動し、headless Chrome で描画確認済み（7件のカードが表示され、モーダルは非表示状態）
+- localStorage キー: `kawaribanko_current_user` / `kawaribanko_last_read_{userId}` / `kawaribanko_local_entries` / `kawaribanko_hidden_ids`
+- `sessionNewCount` はグローバル変数。起動時に1回設定され render() 内では変わらない
+- `getTurnOrder()` = `members.filter(m => m.inRotation).map(m => m.id)` = `['dev','feedback','slides']`
+- アプリ確認: `python3 -m http.server 8000 --directory app` 起動後、headless Chrome で 11件のカードが表示、「あなたは誰ですか？」バナーが出ること、フォームIDが `c4-dev` と出ることを確認済み（c3は全員記入済み → 次はサイクル4の dev）
