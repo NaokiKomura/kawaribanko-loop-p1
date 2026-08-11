@@ -341,6 +341,26 @@
     /* ── サイクルドット名前ラベル ─── */
     .cycle-dot-label { font-size: .72rem; color: var(--text-sub); margin-right: .1rem; }
 
+    /* ── ヘッダー右側グループ ────── */
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+
+    /* ── 反映済みバッジ ─────────── */
+    .reflected-badge {
+      display: inline-block; font-size: .68rem; padding: .12em .55em;
+      border-radius: 4px; background: #d4edda; color: #155724;
+      margin-bottom: .6rem; font-weight: 700; letter-spacing: .04em;
+    }
+
+    /* ── 未読詳細・ジャンプボタン ─ */
+    .unread-notice { flex-wrap: wrap; }
+    .unread-detail { font-size: .78rem; color: var(--text-meta); }
+    .unread-reply  { font-size: .78rem; color: #e8654a; font-weight: 700; }
+    .unread-jump-btn {
+      background: none; border: 1px solid #4a7ce8; border-radius: 99px;
+      cursor: pointer; font-size: .76rem; padding: .18rem .65rem; color: #4a7ce8;
+    }
+    .unread-jump-btn:hover { background: #eef3fd; }
+
     /* ── レスポンシブ ─────────────── */
     @media (max-width: 480px) {
       header { padding: 1rem; gap: 1rem; }
@@ -357,7 +377,7 @@
     <div class="header-title">かわりばんこ</div>
     <div class="header-subtitle" id="header-subtitle">開発チームの交換日記</div>
   </div>
-  <div style="margin-left:auto;display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;">
+  <div class="header-right">
     <div id="user-chip-area"></div>
     <div class="member-chips" id="member-chips"></div>
   </div>
@@ -531,7 +551,21 @@
 
   // ── ソートトグル ─────────────────────────
   const sortBtn = document.getElementById('sort-toggle');
+  function updateSortBtnState() {
+    if (threadMode) {
+      sortBtn.disabled = true;
+      sortBtn.title = 'スレッド表示は返信順で固定です';
+      sortBtn.style.opacity = '0.4';
+      sortBtn.style.cursor = 'default';
+    } else {
+      sortBtn.disabled = false;
+      sortBtn.title = '';
+      sortBtn.style.opacity = '';
+      sortBtn.style.cursor = '';
+    }
+  }
   sortBtn.addEventListener('click', () => {
+    if (threadMode) return;
     newestFirst = !newestFirst;
     sortBtn.textContent = newestFirst ? '新しい順 ↓' : '古い順 ↑';
     render();
@@ -545,6 +579,7 @@
       threadMode = false;
       viewFlat.classList.add('active');
       viewThread.classList.remove('active');
+      updateSortBtnState();
       render();
     }
   });
@@ -553,6 +588,7 @@
       threadMode = true;
       viewThread.classList.add('active');
       viewFlat.classList.remove('active');
+      updateSortBtnState();
       render();
     }
   });
@@ -589,6 +625,21 @@
     localStorage.setItem(LS_LAST_READ + userId, String(count));
   }
 
+  // ── 未読基準の計算（Decision Log #15）──────
+  // 「あなたが最後に書いたエントリ」の次を起点にする。
+  // localStorage は任意の前倒し（既読にする）としてのみ使用。消えても壊れない。
+  function getUnreadBaseIdx(userId) {
+    const entries = data.entries || [];
+    for (let i = entries.length - 1; i >= 0; i--) {
+      if (entries[i].author === userId) return i + 1;
+    }
+    return 0;
+  }
+
+  function getReadFromIdx(userId) {
+    return Math.max(getUnreadBaseIdx(userId), getLastRead(userId));
+  }
+
   function loadLocalEntries() {
     try { return JSON.parse(localStorage.getItem(LS_ENTRIES) || '[]'); }
     catch { return []; }
@@ -619,7 +670,7 @@
   }
 
   // ── エントリカード生成 ───────────────────
-  function buildCard(entry, isLocal, isNew) {
+  function buildCard(entry, isLocal, isNew, isReflected) {
     const m = getMember(entry.author);
     const card = document.createElement('div');
     card.className = 'entry-card' + (isLocal ? ' local-draft' : '');
@@ -645,8 +696,16 @@
         + '</div>'
       : '';
 
+    // 下書きバッジ：反映済みかどうかで切替（Decision Log #19）
+    let draftBadge = '';
+    if (isLocal) {
+      draftBadge = isReflected
+        ? '<span class="reflected-badge">反映済み ✓' + (entry._contentMatch === false ? '（内容変更あり）' : '') + '</span>'
+        : '<span class="local-badge">下書き（ローカル）</span>';
+    }
+
     card.innerHTML =
-      (isLocal ? '<span class="local-badge">下書き（ローカル）</span>' : '')
+      draftBadge
       + (isNew ? '<span class="new-badge-card">新着</span>' : '')
       + '<div class="entry-header">'
       +   '<div class="entry-avatar js-avatar">' + esc(m.emoji) + '</div>'
@@ -770,14 +829,16 @@
       const dot = document.createElement('span');
       dot.className = 'cycle-dot';
       dot.title = m.emoji + ' ' + m.name + (written ? '  記入済み' : '  未記入');
+      dot.setAttribute('aria-label', m.name + (written ? ' 記入済み' : ' 未記入'));
       dot.style.borderColor = m.color;
       if (written) dot.style.background = m.color;
       statusEl.appendChild(dot);
       if (!written) {
         const lbl = document.createElement('span');
         lbl.className = 'cycle-dot-label';
-        lbl.textContent = m.emoji;
+        lbl.textContent = m.emoji + ' ' + m.name;
         lbl.title = m.name + ' 未記入';
+        lbl.setAttribute('aria-label', m.name + ' 未記入');
         statusEl.appendChild(lbl);
       }
     });
@@ -787,9 +848,16 @@
 
   // ── サイクルグループ描画 ─────────────────────
   function renderGrouped(tl, sorted) {
-    // 正本エントリのサイクル別記入者マップ
+    // 正本＋ローカル下書きのサイクル別記入者マップ（Decision Log #17）
     const officialByCycle = {};
     (data.entries || []).forEach(e => {
+      const c = e.cycle ?? 0;
+      if (!officialByCycle[c]) officialByCycle[c] = new Set();
+      officialByCycle[c].add(e.author);
+    });
+    const localAll = loadLocalEntries();
+    const hiddenIds = getHiddenIds();
+    localAll.filter(e => !hiddenIds.has(e.id)).forEach(e => {
       const c = e.cycle ?? 0;
       if (!officialByCycle[c]) officialByCycle[c] = new Set();
       officialByCycle[c].add(e.author);
@@ -805,7 +873,7 @@
       .sort((a, b) => newestFirst ? b - a : a - b);
     cycles.forEach(cycle => {
       tl.appendChild(buildCycleHeader(cycle, officialByCycle));
-      byCycle[cycle].forEach(e => tl.appendChild(buildCard(e, e._local, e._isNew)));
+      byCycle[cycle].forEach(e => tl.appendChild(buildCard(e, e._local, e._isNew, e._reflected)));
     });
   }
 
@@ -831,7 +899,7 @@
     function renderEntry(entry, depth) {
       if (visited.has(entry.id)) return; // 循環参照防止
       visited.add(entry.id);
-      const card = buildCard(entry, entry._local, entry._isNew);
+      const card = buildCard(entry, entry._local, entry._isNew, entry._reflected);
       const vd = Math.min(depth, MAX_DEPTH);
       card.style.marginLeft = (vd * INDENT) + 'rem';
       if (depth > 0) {
@@ -852,14 +920,14 @@
 
   // ── ヘッダー副題・未読通知・ユーザーバナー ─────
   let sessionNewCount = 0;
+  let sessionUnreadFromIdx = 0; // 最初の未読エントリのインデックス
 
   function initSession() {
     const userId = loadCurrentUser();
-    if (!userId) return;
-    const entries = data.entries || [];
-    const oldLastRead = getLastRead(userId);
-    sessionNewCount = Math.max(0, entries.length - oldLastRead);
-    setLastRead(userId, entries.length);
+    if (!userId) { sessionNewCount = 0; return; }
+    // 起動時に lastRead を上書きしない（Decision Log #15）
+    sessionUnreadFromIdx = getReadFromIdx(userId);
+    sessionNewCount = Math.max(0, (data.entries || []).length - sessionUnreadFromIdx);
   }
 
   function updateHeaderSubtitle() {
@@ -870,6 +938,8 @@
 
     if (currentUser) {
       const m = getMember(author);
+      // サイクル番号は常に表示（自分の番でも消さない）
+      subtitleEl.appendChild(document.createTextNode('サイクル ' + cycle + ' — '));
       if (currentUser === author) {
         const span = document.createElement('span');
         span.className = 'your-turn-text';
@@ -877,7 +947,7 @@
         subtitleEl.appendChild(span);
       } else {
         subtitleEl.appendChild(
-          document.createTextNode('サイクル ' + cycle + ' — ' + m.emoji + ' ' + m.name + 'が書いています')
+          document.createTextNode(m.emoji + ' ' + m.name + 'が書いています')
         );
       }
       if (sessionNewCount > 0) {
@@ -920,9 +990,9 @@
         btn.textContent = m.emoji + ' ' + m.name;
         btn.addEventListener('click', () => {
           saveCurrentUser(m.id);
-          // 初回選択：既存エントリを全部「既読」扱いにする（新着ゼロから始める）
-          setLastRead(m.id, (data.entries || []).length);
-          sessionNewCount = 0;
+          // 選択時に lastRead を上書きしない（#15）。エントリ由来の基点を使う。
+          sessionUnreadFromIdx = getReadFromIdx(m.id);
+          sessionNewCount = Math.max(0, (data.entries || []).length - sessionUnreadFromIdx);
           renderUserBanner();
           updateHeaderSubtitle();
           renderUnreadNotice();
@@ -945,6 +1015,7 @@
       chip.addEventListener('click', () => {
         saveCurrentUser(null);
         sessionNewCount = 0;
+        sessionUnreadFromIdx = 0;
         renderUserBanner();
         updateHeaderSubtitle();
         renderUnreadNotice();
@@ -961,19 +1032,79 @@
     if (sessionNewCount <= 0) return;
     const userId = loadCurrentUser();
     if (!userId) return;
+
+    const entries = data.entries || [];
+    const unreadEntries = entries.slice(sessionUnreadFromIdx);
+
+    // 自分が最後に書いたエントリ（基点の前）
+    const myEntryIds = new Set(entries.filter(e => e.author === userId).map(e => e.id));
+    const lastMyEntry = entries.slice(0, sessionUnreadFromIdx).filter(e => e.author === userId).pop();
+
+    // 著者別カウント・返信カウント
+    const countByAuthor = {};
+    let replyToMeCount = 0;
+    unreadEntries.forEach(e => {
+      countByAuthor[e.author] = (countByAuthor[e.author] || 0) + 1;
+      if (e.replyTo && myEntryIds.has(e.replyTo)) replyToMeCount++;
+    });
+
     const wrap = document.createElement('div');
     wrap.className = 'unread-notice';
-    wrap.appendChild(document.createTextNode('前回から ' + sessionNewCount + ' 件の新着があります'));
+
+    // メインメッセージ
+    const mainText = lastMyEntry
+      ? lastMyEntry.id + ' を書いてから ' + sessionNewCount + ' 件の新着'
+      : sessionNewCount + ' 件の新着';
+    wrap.appendChild(document.createTextNode(mainText));
+
+    // 著者内訳
+    const authorsSummary = Object.entries(countByAuthor)
+      .map(([id, count]) => getMember(id).name + ' ' + count + '件')
+      .join('・');
+    if (authorsSummary) {
+      const detail = document.createElement('span');
+      detail.className = 'unread-detail';
+      detail.textContent = '（' + authorsSummary + '）';
+      wrap.appendChild(detail);
+    }
+
+    // 自分への返信
+    if (replyToMeCount > 0) {
+      const replySpan = document.createElement('span');
+      replySpan.className = 'unread-reply';
+      replySpan.textContent = '/ ' + replyToMeCount + '件があなたへの返信';
+      wrap.appendChild(replySpan);
+    }
+
+    // 「前回の続きから」ボタン
+    if (sessionUnreadFromIdx < entries.length) {
+      const jumpBtn = document.createElement('button');
+      jumpBtn.className = 'unread-jump-btn';
+      jumpBtn.textContent = '前回の続きから';
+      jumpBtn.addEventListener('click', () => {
+        const target = entries[sessionUnreadFromIdx];
+        if (target) {
+          const targetEl = document.getElementById('entry-' + target.id);
+          if (targetEl) targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      });
+      wrap.appendChild(jumpBtn);
+    }
+
+    // 「既読にする」ボタン
     const btn = document.createElement('button');
     btn.className = 'mark-read-btn';
     btn.textContent = '既読にする';
     btn.addEventListener('click', () => {
+      setLastRead(userId, entries.length);
       sessionNewCount = 0;
+      sessionUnreadFromIdx = entries.length;
       el.innerHTML = '';
       updateHeaderSubtitle();
       render();
     });
     wrap.appendChild(btn);
+
     el.appendChild(wrap);
   }
 
@@ -992,10 +1123,21 @@
     const official = (data.entries || []).map((e, i) => Object.assign({}, e, {
       _local: false, _idx: i, _isNew: i >= newStartIdx && sessionNewCount > 0
     }));
+    // 反映済み下書き検出用マップ（Decision Log #19）
+    const officialByIdMap = {};
+    (data.entries || []).forEach(e => { officialByIdMap[e.id] = e; });
     // ローカル下書き（非表示除外）
     const local = localAll
       .filter(e => !hiddenIds.has(e.id))
-      .map((e, i) => Object.assign({}, e, { _local: true, _idx: official.length + i, _isNew: false }));
+      .map((e, i) => {
+        const officialMatch = officialByIdMap[e.id];
+        const isReflected = !!officialMatch;
+        const contentMatch = isReflected && (e.title === officialMatch.title && e.body === officialMatch.body);
+        return Object.assign({}, e, {
+          _local: true, _idx: official.length + i, _isNew: false,
+          _reflected: isReflected, _contentMatch: contentMatch
+        });
+      });
 
     // フィルタ適用（未知著者は activeAuthors に含まれているため通過する）
     const combined = official.concat(local).filter(e => activeAuthors.has(e.author));
@@ -1048,6 +1190,7 @@
   }
 
   initSession();
+  updateSortBtnState();
   render();
   renderUserBanner();
   updateHeaderSubtitle();

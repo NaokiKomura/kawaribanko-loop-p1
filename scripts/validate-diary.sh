@@ -116,9 +116,17 @@ const cssMatch = html.match(/<style>([\\s\\S]*?)<\\/style>/);
 if (!cssMatch) { process.stdout.write('PASS'); process.exit(0); }
 const css = cssMatch[1];
 
-// [hidden] 属性を持つ要素の id と class (アプリの実態に合わせてリスト化)
-const hiddenIds     = ['compose-panel', 'export-warning', 'export-overlay'];
-const hiddenClasses = ['compose-panel', 'export-warning', 'export-overlay'];
+// [hidden] 属性を持つ要素の id と class を HTML から動的に抽出（手書きリスト廃止 #18）
+const hiddenTokens = [];
+const tagRe = /<[^>]+\\bhidden\\b[^>]*>/g;
+let tagMatch;
+while ((tagMatch = tagRe.exec(html)) !== null) {
+  const tag = tagMatch[0];
+  const idM = tag.match(/\\bid=\"([^\"]+)\"/);
+  const clsM = tag.match(/\\bclass=\"([^\"]+)\"/);
+  if (idM) hiddenTokens.push('#' + idM[1]);
+  if (clsM) clsM[1].split(/\\s+/).filter(Boolean).forEach(c => hiddenTokens.push('.' + c));
+}
 
 // CSS ルールを「セレクタ { プロパティ }」単位で分解
 const ruleRe = /([^{}@]+)\\{([^{}]*)\\}/g;
@@ -132,12 +140,17 @@ while ((match = ruleRe.exec(css)) !== null) {
   if (!dm) continue;
   const dv = dm[1].trim().toLowerCase();
   if (dv === 'none' || dv === '') continue;
-  // :not([hidden]) ガードがあればセーフ
-  if (sel.includes(':not([hidden])')) continue;
-  // 対象要素のセレクタに一致するか確認
-  for (const id of hiddenIds) {
-    if (sel.includes('#' + id) || sel.includes('.' + id)) {
-      violations.push('\"' + sel.replace(/\\s+/g,' ') + '\" が display:' + dv + ' を設定（:not([hidden]) ガードなし）');
+  // セレクタをカンマで分割して1本ずつ判定（リスト部分一致バグ修正 #18）
+  const selParts = sel.split(',').map(s => s.trim());
+  for (const part of selParts) {
+    // この部分セレクタに :not([hidden]) ガードがあればセーフ
+    if (part.includes(':not([hidden])')) continue;
+    // hidden 属性付き要素のいずれかにマッチするか確認
+    for (const token of hiddenTokens) {
+      if (part.includes(token)) {
+        violations.push('\"' + sel.replace(/\\s+/g,' ') + '\" (' + part + ') が display:' + dv + ' を設定（:not([hidden]) ガードなし）');
+        break;
+      }
     }
   }
 }

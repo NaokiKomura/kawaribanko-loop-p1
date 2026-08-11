@@ -10,10 +10,10 @@
 
 ## 現在地
 
-- サイクル: 4 / 7
+- サイクル: 5 / 7
 - プロダクト: 交換日記アプリ「かわりばんこ」（要件は `docs/product-brief.md`）
-- 実装状況: 読む・書く・出力・スレッド・サイクルグループ・次の番・ユーザー同一性・未読追跡が揃った
-- 交換日記: 11件（c0〜c3の10件 + c4-dev）
+- 実装状況: 読む・書く・出力・スレッド・サイクルグループ・次の番・ユーザー同一性・未読追跡（作り直し済み）・反映済み下書き検出・スレッドソート無効化が揃った
+- 交換日記: 14件（c0〜c4の13件 + c5-dev）
 
 ## アーキテクチャ上の決定（Decision Log）
 
@@ -30,20 +30,26 @@
 | 9 | `.export-overlay:not([hidden]) { display: flex }` | `display: flex` が `[hidden]` を上書きしていた。セレクタを `not([hidden])` に移すことで修正 | 3 |
 | 10 | スレッドとサイクルグループを独立モードに | スレッド=「誰が誰に返したか」、グループ=「いつ書いたか」。2軸を混在させると意味が濁る | 3 |
 | 11 | ユーザー同一性は localStorage に保存（認証なし） | 静的サイトのスコープ外。3人しかいない選択肢を1回選ぶだけ | 4 |
-| 12 | 未読追跡: 起動時に lastRead を自動更新 + sessionNewCount を保持 | セッション単位で「前回から N 件」が自然に定まる。既読ボタンはセッション内消去用 | 4 |
-| 13 | CSS hidden チェックを Node.js 静的解析に置換 | CDP/WebSocket は Node 標準モジュール外。静的解析で .compose-panel 注入も検出可能 | 4 |
+| 12 | ~~未読追跡: 起動時に lastRead を自動更新~~ → #15 で置き換え | セッション単位の管理はリロード・名前変更で壊れる | 4→5 |
+| 13 | CSS hidden チェックを Node.js 静的解析に置換 | CDP/WebSocket は Node 標準モジュール外 | 4 |
 | 14 | turnOrder を members.inRotation から導出 | 二重定義を解消。owner が回覧外なことをデータで表現 | 4 |
+| 15 | 未読基準を「あなたが最後に書いたエントリ」に変更（#12を置き換え） | リロード・名前変更後も消えない。localStorage は任意の前倒しとしてのみ使用 | 5 |
+| 16 | スレッドモードでソートボタンを disabled 化 | 一本鎖では兄弟ソートが効かない。押しても変わらないボタンより明示的無効が誠実 | 5 |
+| 17 | officialByCycle にローカル下書きを含める | 自分の下書きを書いた時点でサイクルドットが埋まる方が「知っているアプリ」として一致 | 5 |
+| 18 | CSS 解析: hidden 要素 id/class を HTML から動的抽出 + セレクタをカンマ分割 | 手書きリスト更新忘れの失敗モードを根絶。カンマ区切りの免除バグも修正 | 5 |
+| 19 | 反映済み下書き: 同 id が正本に存在 = 反映済み（内容不一致でも）| id が正本の一意キーであるため。不一致時は「内容変更あり」を追記 | 5 |
 
 ## 未解決の課題・リスク
 
 - **下書きの編集不可**: `saveLocalEntry()` の更新分岐（`idx >= 0`）が到達不能のまま
 - **スレッドモードでサイクルヘッダーが消える**: `renderThreaded()` はサイクルグループを描画しない
-- **サイクルドットが下書きを見ない**: `officialByCycle` は正本のみ（下書きを書いても「未記入」表示）
-- **モバイル入力体験未検証**
+- **モバイル入力体験未検証**（5サイクル連続）
 
 ## 次のサイクルへの申し送り
 
 - localStorage キー: `kawaribanko_current_user` / `kawaribanko_last_read_{userId}` / `kawaribanko_local_entries` / `kawaribanko_hidden_ids`
-- `sessionNewCount` はグローバル変数。起動時に1回設定され render() 内では変わらない
-- `getTurnOrder()` = `members.filter(m => m.inRotation).map(m => m.id)` = `['dev','feedback','slides']`
-- アプリ確認: `python3 -m http.server 8000 --directory app` 起動後、headless Chrome で 11件のカードが表示、「あなたは誰ですか？」バナーが出ること、フォームIDが `c4-dev` と出ることを確認済み（c3は全員記入済み → 次はサイクル4の dev）
+- `getReadFromIdx(userId)` = `max(getUnreadBaseIdx(userId), getLastRead(userId))`
+- `getUnreadBaseIdx(userId)` = 正本の中でそのユーザーが最後に書いたエントリの次のインデックス（0 = 一度も書いていない）
+- `sessionUnreadFromIdx` はグローバル変数。未読の最初のエントリへのインデックス（「前回の続きから」スクロールに使用）
+- アプリ確認: `python3 -m http.server 8000 --directory app` 起動後、headless Chrome で 14件のカードが表示されること（c5-devを書いた後）
+- `.claude/agents/` と `.claude/skills/` は使わないことを明示的に判断した（journal cycle-5.md 参照）
