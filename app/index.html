@@ -361,12 +361,35 @@
     }
     .unread-jump-btn:hover { background: #eef3fd; }
 
+    /* ── 全文検索ボックス ────────── */
+    #search-input {
+      flex: 1; max-width: 180px;
+      padding: .28rem .65rem;
+      border: 1px solid var(--border); border-radius: 99px;
+      font-size: .8rem; background: var(--surface); color: var(--text);
+      transition: border-color .12s;
+    }
+    #search-input:focus { outline: none; border-color: #aaa; }
+    #search-input::placeholder { color: var(--text-meta); }
+
+    /* ── 検索ハイライト ──────────── */
+    mark { background: #fff3cd; color: inherit; border-radius: 2px; padding: 0 .1em; }
+
     /* ── レスポンシブ ─────────────── */
     @media (max-width: 480px) {
-      header { padding: 1rem; gap: 1rem; }
-      .member-chips { margin-left: 0; }
+      header { padding: .75rem 1rem; gap: .5rem; }
+      .header-title { font-size: 1.1rem; }
+      .header-subtitle { font-size: .72rem; max-width: 180px; }
+      .member-chips { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
+      .member-chip { flex-shrink: 0; min-height: 36px; font-size: .72rem; padding: .2rem .55rem; }
       .entry-card { padding: 1.1rem 1.25rem; }
       .compose-panel { padding: 1.1rem 1.25rem; }
+      .unread-notice { flex-wrap: wrap; gap: .4rem; align-items: flex-start; }
+      .unread-jump-btn { min-height: 40px; padding: .5rem .75rem; font-size: .8rem; }
+      .mark-read-btn   { min-height: 40px; padding: .5rem .75rem; font-size: .8rem; }
+      .user-chip { min-height: 36px; }
+      #sort-toggle { min-height: 36px; }
+      #search-input { max-width: 130px; }
     }
   </style>
 </head>
@@ -388,6 +411,7 @@
 
 <div class="filter-bar">
   <span class="filter-label" id="filter-label">すべて表示</span>
+  <input type="search" id="search-input" placeholder="🔍 本文を検索…" />
   <button id="sort-toggle">古い順 ↑</button>
 </div>
 
@@ -516,6 +540,7 @@
   (data.entries || []).forEach(e => { if (e.author) allAuthorIds.add(e.author); });
   const activeAuthors = new Set(allAuthorIds);
   let newestFirst = false;
+  let searchQuery = '';
 
   // ── メンバーチップ ───────────────────────
   const chipsEl = document.getElementById('member-chips');
@@ -591,6 +616,12 @@
       updateSortBtnState();
       render();
     }
+  });
+
+  // ── 全文検索 ─────────────────────────────
+  document.getElementById('search-input').addEventListener('input', function() {
+    searchQuery = this.value.trim();
+    render();
   });
 
   // ── 日付フォーマット ─────────────────────
@@ -669,12 +700,41 @@
     render();
   }
 
+  // ── 検索ハイライト（XSS安全: DOMノードで組む）────
+  // esc()を通さずにTextNode+markノードで構成するため、
+  // innerHTML/innerHTMLインジェクションの危険がない（Decision #5 準拠）。
+  function highlightText(text, query) {
+    const frag = document.createDocumentFragment();
+    if (!query) {
+      frag.appendChild(document.createTextNode(text));
+      return frag;
+    }
+    const lower = text.toLowerCase();
+    const q = query.toLowerCase();
+    let pos = 0;
+    while (pos < text.length) {
+      const idx = lower.indexOf(q, pos);
+      if (idx === -1) {
+        frag.appendChild(document.createTextNode(text.slice(pos)));
+        break;
+      }
+      if (idx > pos) frag.appendChild(document.createTextNode(text.slice(pos, idx)));
+      const mark = document.createElement('mark');
+      mark.textContent = text.slice(idx, idx + q.length);
+      frag.appendChild(mark);
+      pos = idx + q.length;
+    }
+    return frag;
+  }
+
   // ── エントリカード生成 ───────────────────
   function buildCard(entry, isLocal, isNew, isReflected) {
     const m = getMember(entry.author);
     const card = document.createElement('div');
     card.className = 'entry-card' + (isLocal ? ' local-draft' : '');
-    card.id = 'entry-' + entry.id;
+    // 下書きは entry-draft-{id}、正本は entry-{id} とする（Task A: DOM id 分離）
+    // 返信リンク・ジャンプボタンは常に正本 entry-{id} を指すので、リンクが下書きに誤着地しない
+    card.id = (isLocal ? 'entry-draft-' : 'entry-') + entry.id;
     // 色はDOMプロパティで設定（style属性インジェクション防止）
     card.style.borderLeftColor = m.color;
 
@@ -691,6 +751,7 @@
 
     const draftHTML = isLocal
       ? '<div class="draft-actions">'
+        + (isReflected ? '<button class="draft-btn" data-action="cleanup" data-id="' + esc(entry.id) + '">下書きを片付ける</button>' : '')
         + '<button class="draft-btn" data-action="hide" data-id="' + esc(entry.id) + '">非表示にする</button>'
         + '<button class="draft-btn export-btn" data-action="export" data-id="' + esc(entry.id) + '">JSONに出力</button>'
         + '</div>'
@@ -718,8 +779,8 @@
       +   '</div>'
       + '</div>'
       + replyHTML
-      + '<div class="entry-title">' + esc(entry.title || '') + '</div>'
-      + '<div class="entry-body">' + esc(entry.body || '') + '</div>'
+      + '<div class="entry-title"></div>'
+      + '<div class="entry-body"></div>'
       + draftHTML;
 
     // 色をDOMで設定
@@ -727,6 +788,17 @@
     avatarEl.style.background = m.color + '22';
     avatarEl.style.borderColor = m.color + '66';
     card.querySelector('.js-author').style.color = m.color;
+
+    // タイトル・本文: 検索クエリがあれば<mark>ハイライト、なければtextContent（XSS安全）
+    const titleEl = card.querySelector('.entry-title');
+    const bodyEl  = card.querySelector('.entry-body');
+    if (searchQuery) {
+      titleEl.appendChild(highlightText(entry.title || '', searchQuery));
+      bodyEl.appendChild(highlightText(entry.body || '', searchQuery));
+    } else {
+      titleEl.textContent = entry.title || '';
+      bodyEl.textContent  = entry.body  || '';
+    }
 
     // 返信リンク: フィルタ非表示・非表示下書きを自動解除して飛ぶ
     const replyLink = card.querySelector('.reply-badge a');
@@ -771,7 +843,7 @@
         btn.addEventListener('click', () => {
           const action = btn.dataset.action;
           const id = btn.dataset.id;
-          if (action === 'hide') {
+          if (action === 'cleanup' || action === 'hide') {
             hideLocalEntry(id);
             render();
           } else if (action === 'export') {
@@ -1140,7 +1212,15 @@
       });
 
     // フィルタ適用（未知著者は activeAuthors に含まれているため通過する）
-    const combined = official.concat(local).filter(e => activeAuthors.has(e.author));
+    let combined = official.concat(local).filter(e => activeAuthors.has(e.author));
+    // 全文検索フィルタ（タイトル・本文に検索語を含むものだけ）
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      combined = combined.filter(e =>
+        (e.title || '').toLowerCase().includes(q) ||
+        (e.body  || '').toLowerCase().includes(q)
+      );
+    }
 
     // ソート: 日付 → 正本優先 → 元インデックス
     const sorted = combined.slice().sort((a, b) => {
@@ -1159,12 +1239,20 @@
       ? 'すべて表示'
       : [...activeAuthors].filter(id => memberMap[id]).map(id => getMember(id).name).join('・') + ' のみ';
 
-    // 件数
+    // 件数（スレッドモードでは同idの正本優先で下書きが排除されるため一意idでカウント）
     const countEl = document.getElementById('entry-count');
-    const localShown = sorted.filter(e => e._local).length;
+    // スレッドモード用: 正本が存在するidの下書きを描画から除外
+    const officialIdSet = new Set(sorted.filter(e => !e._local).map(e => e.id));
+    const displayCount = threadMode
+      ? sorted.filter(e => !e._local || !officialIdSet.has(e.id)).length
+      : sorted.length;
+    const localShown = threadMode
+      ? sorted.filter(e => e._local && !officialIdSet.has(e.id)).length
+      : sorted.filter(e => e._local).length;
+    const searchSuffix = searchQuery ? ' 「' + searchQuery + '」を含む' : '';
     countEl.textContent = localShown > 0
-      ? sorted.length + ' 件（うち下書き ' + localShown + ' 件）'
-      : sorted.length + ' 件';
+      ? displayCount + ' 件（うち下書き ' + localShown + ' 件）' + searchSuffix
+      : displayCount + ' 件' + searchSuffix;
 
     // 非表示下書き案内
     const hiddenNoticeEl = document.getElementById('hidden-notice');
@@ -1178,12 +1266,16 @@
 
     const tl = document.getElementById('timeline');
     if (sorted.length === 0) {
-      tl.innerHTML = '<div class="state-msg"><div class="icon">📭</div>表示できるエントリがありません</div>';
+      const icon = searchQuery ? '🔍' : '📭';
+      const msg  = searchQuery ? '「' + searchQuery + '」に一致するエントリがありません' : '表示できるエントリがありません';
+      tl.innerHTML = '<div class="state-msg"><div class="icon">' + icon + '</div>' + esc(msg) + '</div>';
       return;
     }
     tl.innerHTML = '';
     if (threadMode) {
-      renderThreaded(tl, sorted);
+      // 正本がある場合は同idの下書きを除外して正本を必ず描画（Task B: 件数と描画の一致）
+      const sortedForThread = sorted.filter(e => !e._local || !officialIdSet.has(e.id));
+      renderThreaded(tl, sortedForThread);
     } else {
       renderGrouped(tl, sorted);
     }
@@ -1347,7 +1439,8 @@
     composeToggle.textContent = '✏️ 日記を書く';
 
     setTimeout(() => {
-      const el = document.getElementById('entry-' + id);
+      // 保存直後は下書きカード（entry-draft-{id}）にスクロール
+      const el = document.getElementById('entry-draft-' + id) || document.getElementById('entry-' + id);
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 100);
   });

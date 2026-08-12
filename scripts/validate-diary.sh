@@ -154,6 +154,17 @@ while ((match = ruleRe.exec(css)) !== null) {
     }
   }
 }
+// インラインstyle属性にdisplayが含まれるhidden要素も検出（Task D）
+const inlineTagRe = /<[^>]+\\bhidden\\b[^>]*>/g;
+let iTagMatch;
+while ((iTagMatch = inlineTagRe.exec(html)) !== null) {
+  const tag = iTagMatch[0];
+  const styleM = tag.match(/\\bstyle\\s*=\\s*[\\\"']([^\\\"']*)/i);
+  if (!styleM) continue;
+  if (/display\\s*:/i.test(styleM[1])) {
+    violations.push('インラインstyle付きhidden要素にdisplay設定: ' + tag.slice(0, 100));
+  }
+}
 if (violations.length > 0) {
   process.stdout.write('FAIL:' + violations.join(' / '));
 } else {
