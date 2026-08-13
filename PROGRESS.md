@@ -10,10 +10,10 @@
 
 ## 現在地
 
-- サイクル: 6 / 7
+- サイクル: 7 / 7（最終サイクル完了）
 - プロダクト: 交換日記アプリ「かわりばんこ」（要件は `docs/product-brief.md`）
-- 実装状況: 読む・書く・出力・スレッド・サイクルグループ・次の番・ユーザー同一性・未読追跡・反映済み下書き検出・スレッドソート無効化・全文検索（DOMノードハイライト）が揃った
-- 交換日記: 17件（c0〜c5の16件 + c6-dev）
+- 実装状況: 読む・書く・出力・スレッド・サイクルグループ・次の番・ユーザー同一性・未読追跡・反映済み下書き検出・スレッドソート無効化・全文検索・ふりかえりビューが揃った
+- 交換日記: 20件（c0〜c7の全エントリ）
 
 ## アーキテクチャ上の決定（Decision Log）
 
@@ -40,19 +40,19 @@
 | 19 | 反映済み下書き: 同 id が正本に存在 = 反映済み | id が正本の一意キー | 5 |
 | 20 | 全文検索: indexOf 線形走査 + DOMノードハイライト | データ量（最大21件×500字）で線形走査で十分。DOMノードでXSS対策（#5）を維持 | 6 |
 | 21 | 下書きのDOM id を `entry-draft-{id}` に分離 | 返信リンク・ジャンプボタンが正本を確実に指す | 6 |
-| 22 | スレッドモードで同id下書きを除外（正本優先） | 件数と描画枚数を一致させる。byIdの競合を避ける | 6 |
+| 22 | スレッドモードで同id下書きを除外（正本優先）。スレッドでは「反映済み ✓」バッジを出さない（仕様確定） | 件数と描画枚数を一致させる。byIdの競合を避ける。フラット側に「片付ける」導線があるため導線は確保済み | 6,7 |
 | 23 | CSS解析にインライン`style=`の`display:`検出を追加 | `<div style="display:block" hidden>` を素通りしていた穴を塞ぐ | 6 |
-
-## 未解決の課題・リスク
-
-- **下書きの編集不可**: `saveLocalEntry()` の更新分岐（`idx >= 0`）が到達不能のまま（6サイクル持ち越し）
-- **モバイルの実測値が取れない**: headless Chromeのdump-domではレイアウト座標が取得できない。CSS変更から推定するしかない状況。
+| 24 | 返信バッジ復帰処理を `revealEntry()` で不変条件化 | 列挙を1つ増やす修正は次のフィルタ追加で必ず踏まれる | 7 |
+| 25 | 下書き編集を実装しない（`idx >= 0` 分岐は dead code として残存） | 「非表示→新規作成」で実質的に更新可能。localStorage ステージング領域に不変性原則を適用 | 7 |
+| 26 | ふりかえりビュー: モーダルオーバーレイとして実装（第4モード） | 既存3モードを壊さずに追加できる。@media print で印刷対応が容易 | 7 |
+| 27 | モバイル: header-right { flex-wrap: nowrap } で縦積み解消 | user-chip + member-chips が 2 段になり HEADER_HEIGHT = 169px だった原因を根絶 | 7 |
+| 28 | 未読通知のテキストノードを span に変更（flex-shrink 防止） | テキストノードが flex コンテナで shrink して折り返し、UNREAD_HEIGHT = 93px → 39px | 7 |
 
 ## 次のサイクルへの申し送り
 
+実験終了。追記はレビュー担当・広報担当の作業ログのみ。
 - localStorage キー: `kawaribanko_current_user` / `kawaribanko_last_read_{userId}` / `kawaribanko_local_entries` / `kawaribanko_hidden_ids`
 - `getReadFromIdx(userId)` = `max(getUnreadBaseIdx(userId), getLastRead(userId))`
 - 下書きのDOM id: `entry-draft-{id}`（正本は `entry-{id}`）
-- 全文検索: `searchQuery` グローバル変数。`render()` 内でフィルタ、`highlightText()` でDOMノードハイライト
-- スレッドモード: `sorted.filter(e => !e._local || !officialIdSet.has(e.id))` で正本優先除外
-- アプリ確認: `python3 -m http.server 8000 --directory app` 起動後、17件のカードが表示されること
+- モバイル実測: `scripts/measure-mobile.py feedback` で計測（chromedriver + http.server が必要）
+- アプリ確認: `python3 -m http.server 8000 --directory app` で 20件のカードが表示されること

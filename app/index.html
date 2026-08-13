@@ -380,16 +380,97 @@
       header { padding: .75rem 1rem; gap: .5rem; }
       .header-title { font-size: 1.1rem; }
       .header-subtitle { font-size: .72rem; max-width: 180px; }
+      /* header-right を横スクロール1行に（user-chip と member-chips が縦積みになるのを防ぐ） */
+      .header-right { flex-wrap: nowrap; overflow-x: auto; }
       .member-chips { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
       .member-chip { flex-shrink: 0; min-height: 36px; font-size: .72rem; padding: .2rem .55rem; }
       .entry-card { padding: 1.1rem 1.25rem; }
       .compose-panel { padding: 1.1rem 1.25rem; }
-      .unread-notice { flex-wrap: wrap; gap: .4rem; align-items: flex-start; }
-      .unread-jump-btn { min-height: 40px; padding: .5rem .75rem; font-size: .8rem; }
-      .mark-read-btn   { min-height: 40px; padding: .5rem .75rem; font-size: .8rem; }
-      .user-chip { min-height: 36px; }
+      /* 未読通知：1行に収めて高さを抑える（FIRST_CARD_TOP 削減） */
+      .unread-notice { flex-wrap: nowrap; overflow-x: auto; gap: .4rem; align-items: center; margin: .3rem auto 0; padding: .1rem 1rem; font-size: .78rem; }
+      .unread-main-text, .unread-detail, .unread-reply { flex-shrink: 0; white-space: nowrap; }
+      .unread-jump-btn { min-height: 36px; padding: .3rem .6rem; font-size: .76rem; flex-shrink: 0; }
+      .mark-read-btn   { min-height: 36px; padding: .3rem .6rem; font-size: .76rem; flex-shrink: 0; }
+      .user-chip { min-height: 36px; flex-shrink: 0; }
       #sort-toggle { min-height: 36px; }
-      #search-input { max-width: 130px; }
+      /* 32px 基準：すべてのインタラクティブ要素に min-height を適用（Task 5） */
+      #search-input { max-width: 130px; min-height: 36px; }
+      #view-flat, #view-thread, #view-retrospective { min-height: 36px; }
+      .user-pick-btn { min-height: 36px; }
+      /* フィルタバーの上余白を縮小して初画面の日記エリアを広げる */
+      .filter-bar { margin-top: .75rem; }
+      /* エントリ件数の下余白を縮小 */
+      .entry-count { padding-bottom: .5rem; }
+    }
+
+    /* ── ふりかえりビュー ─────────────────────── */
+    .retro-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 300;
+      display: none; align-items: flex-start; justify-content: center;
+      overflow-y: auto; padding: 2rem 1rem;
+    }
+    .retro-overlay:not([hidden]) { display: flex; }
+    .retro-box {
+      background: var(--surface); border-radius: var(--radius);
+      padding: 2rem; max-width: 720px; width: 100%;
+      box-shadow: 0 10px 40px rgba(0,0,0,.25);
+      margin: auto;
+    }
+    .retro-section-title {
+      font-size: 1rem; font-weight: 700;
+      margin: 1.25rem 0 .75rem; padding-bottom: .4rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .retro-section-title:first-child { margin-top: 0; }
+
+    .retro-stat-row { display: flex; flex-direction: column; gap: .45rem; margin-bottom: .75rem; }
+    .retro-member-stat { display: flex; align-items: baseline; gap: .5rem; font-size: .88rem; }
+    .retro-member-name { font-weight: 700; min-width: 100px; }
+    .retro-stat-nums { color: var(--text-sub); font-size: .83rem; }
+
+    .retro-chain-status { font-size: .88rem; margin-bottom: .6rem; }
+    .retro-chain-ok    { color: #27ae60; font-weight: 700; }
+    .retro-chain-break { color: #e8654a; font-weight: 700; }
+    .retro-reply-matrix { font-size: .82rem; margin-top: .5rem; color: var(--text-sub); }
+    .retro-reply-row { margin-bottom: .2rem; }
+
+    .retro-cycle-divider {
+      text-align: center; font-size: .8rem; font-weight: 700;
+      color: var(--text-sub); margin: 1.75rem 0 .85rem;
+      display: flex; align-items: center; gap: .6rem;
+    }
+    .retro-cycle-divider::before, .retro-cycle-divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+    .retro-entry { margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border); }
+    .retro-entry:last-child { border-bottom: none; margin-bottom: 0; }
+    .retro-entry-meta  { font-size: .78rem; margin-bottom: .35rem; }
+    .retro-entry-title { font-size: 1rem; font-weight: 700; margin-bottom: .45rem; line-height: 1.5; }
+    .retro-entry-body  { font-size: .88rem; color: #2a2520; white-space: pre-wrap; line-height: 1.85; }
+
+    .retro-actions {
+      display: flex; gap: .75rem; flex-wrap: wrap;
+      margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border);
+    }
+    .retro-print-btn {
+      padding: .55rem 1.1rem; background: #4a7ce8; color: #fff;
+      border: none; border-radius: 8px; cursor: pointer; font-size: .88rem; font-weight: 600;
+    }
+    .retro-print-btn:hover { background: #3a6cd8; }
+    .retro-md-btn, .retro-close-btn {
+      padding: .55rem 1.1rem; background: transparent; border: 1px solid var(--border);
+      border-radius: 8px; cursor: pointer; font-size: .88rem; color: var(--text-sub);
+    }
+    .retro-md-btn:hover, .retro-close-btn:hover { background: var(--bg); }
+
+    @media print {
+      header, .filter-bar, .view-bar, main, .compose-wrap,
+      #user-banner-container, #unread-notice-container { display: none !important; }
+      /* .export-overlay は [hidden] 属性で制御するので列挙不要 */
+      .retro-overlay { position: static; overflow: visible; padding: 0; background: none; }
+      .retro-overlay:not([hidden]) { display: block; }
+      .retro-box { box-shadow: none; padding: 0; max-width: none; border-radius: 0; }
+      .retro-actions { display: none; }
     }
   </style>
 </head>
@@ -411,13 +492,14 @@
 
 <div class="filter-bar">
   <span class="filter-label" id="filter-label">すべて表示</span>
-  <input type="search" id="search-input" placeholder="🔍 本文を検索…" />
+  <input type="search" id="search-input" placeholder="🔍 本文を検索…" aria-label="本文を検索" />
   <button id="sort-toggle">古い順 ↑</button>
 </div>
 
 <div class="view-bar">
   <button class="view-btn active" id="view-flat">フラット</button>
   <button class="view-btn" id="view-thread">スレッド</button>
+  <button class="view-btn" id="view-retrospective">ふりかえり</button>
 </div>
 
 <main>
@@ -470,6 +552,23 @@
     <div class="form-actions">
       <button class="btn-primary" id="form-submit">下書きとして保存</button>
       <button class="btn-secondary" id="form-cancel">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- ふりかえりオーバーレイ -->
+<div class="retro-overlay" id="retro-overlay" hidden>
+  <div class="retro-box">
+    <h2 class="retro-section-title">📊 統計</h2>
+    <div id="retro-stats"></div>
+    <h2 class="retro-section-title">🔗 交換の流れ</h2>
+    <div id="retro-chain"></div>
+    <h2 class="retro-section-title">📖 通し読み</h2>
+    <div id="retro-read"></div>
+    <div class="retro-actions">
+      <button class="retro-print-btn" id="retro-print">🖨 印刷</button>
+      <button class="retro-md-btn" id="retro-copy-md">Markdownをコピー</button>
+      <button class="retro-close-btn" id="retro-close">閉じる</button>
     </div>
   </div>
 </div>
@@ -618,6 +717,214 @@
     }
   });
 
+  // ── ふりかえりビュー ──────────────────────
+  const retroOverlay = document.getElementById('retro-overlay');
+
+  document.getElementById('view-retrospective').addEventListener('click', () => {
+    buildRetrospective();
+    retroOverlay.hidden = false;
+    document.body.style.overflow = 'hidden';
+  });
+
+  document.getElementById('retro-close').addEventListener('click', () => {
+    retroOverlay.hidden = true;
+    document.body.style.overflow = '';
+  });
+
+  retroOverlay.addEventListener('click', ev => {
+    if (ev.target === retroOverlay) {
+      retroOverlay.hidden = true;
+      document.body.style.overflow = '';
+    }
+  });
+
+  document.getElementById('retro-print').addEventListener('click', () => {
+    window.print();
+  });
+
+  document.getElementById('retro-copy-md').addEventListener('click', async () => {
+    const md = buildRetrospectiveMarkdown();
+    const btn = document.getElementById('retro-copy-md');
+    try {
+      await navigator.clipboard.writeText(md);
+      btn.textContent = 'コピーしました ✓';
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = md;
+      ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      btn.textContent = 'コピーしました ✓';
+    }
+    setTimeout(() => { btn.textContent = 'Markdownをコピー'; }, 2000);
+  });
+
+  function buildRetrospective() {
+    const entries = data.entries || [];
+    const members = (data.members || []).filter(m => m.inRotation);
+
+    // A: 統計（メンバーごとのエントリ数・平均文字数・受取返信数）
+    const statsEl = document.getElementById('retro-stats');
+    statsEl.innerHTML = '';
+    const statRow = document.createElement('div');
+    statRow.className = 'retro-stat-row';
+    members.forEach(m => {
+      const myEntries = entries.filter(e => e.author === m.id);
+      const count = myEntries.length;
+      const avgLen = count > 0
+        ? Math.round(myEntries.reduce((s, e) => s + (e.body || '').length, 0) / count)
+        : 0;
+      const receivedReplies = entries.filter(e => {
+        if (!e.replyTo) return false;
+        const t = entries.find(t => t.id === e.replyTo);
+        return t && t.author === m.id;
+      }).length;
+      const row = document.createElement('div');
+      row.className = 'retro-member-stat';
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'retro-member-name';
+      nameSpan.style.color = m.color;
+      nameSpan.textContent = m.emoji + ' ' + m.name;
+      const numsSpan = document.createElement('span');
+      numsSpan.className = 'retro-stat-nums';
+      numsSpan.textContent = count + '件 / 平均' + avgLen + '字 / 受取返信' + receivedReplies + '件';
+      row.appendChild(nameSpan);
+      row.appendChild(numsSpan);
+      statRow.appendChild(row);
+    });
+    statsEl.appendChild(statRow);
+
+    // B: 交換の流れ（誰が誰に何回返したか + 一本鎖チェック）
+    const chainEl = document.getElementById('retro-chain');
+    chainEl.innerHTML = '';
+
+    // 一本鎖チェック: 最新エントリから replyTo を辿って c0-owner まで到達するか
+    const entryIds = new Set(entries.map(e => e.id));
+    const visited = new Set();
+    let cur = entries.length > 0 ? entries[entries.length - 1] : null;
+    const chain = [];
+    let chainOk = true;
+    while (cur) {
+      if (visited.has(cur.id)) { chainOk = false; break; }
+      visited.add(cur.id);
+      chain.unshift(cur);
+      if (!cur.replyTo) break;
+      cur = entries.find(e => e.id === cur.replyTo) || null;
+    }
+    const chainIntact = chainOk && chain.length > 0 && chain[0].id === 'c0-owner';
+
+    const statusDiv = document.createElement('div');
+    statusDiv.className = 'retro-chain-status';
+    const statusSpan = document.createElement('span');
+    statusSpan.className = chainIntact ? 'retro-chain-ok' : 'retro-chain-break';
+    if (chainIntact) {
+      statusSpan.textContent = '✓ c0-owner から最新エントリまで ' + chain.length + '件の一本鎖が繋がっています';
+    } else {
+      statusSpan.textContent = '⚠ 一本鎖に断絶があります（' + chain.length + '件が繋がっています）';
+    }
+    statusDiv.appendChild(statusSpan);
+    chainEl.appendChild(statusDiv);
+
+    // 誰が誰に何回返したかのマトリクス
+    const replyMatrix = {};
+    entries.forEach(e => {
+      if (!e.replyTo) return;
+      const target = entries.find(t => t.id === e.replyTo);
+      if (!target) return;
+      const key = e.author + '→' + target.author;
+      if (!replyMatrix[key]) replyMatrix[key] = { from: e.author, to: target.author, count: 0 };
+      replyMatrix[key].count++;
+    });
+    const matrixEl = document.createElement('div');
+    matrixEl.className = 'retro-reply-matrix';
+    Object.values(replyMatrix).forEach(({ from, to, count }) => {
+      const fromM = getMember(from);
+      const toM   = getMember(to);
+      const row = document.createElement('div');
+      row.className = 'retro-reply-row';
+      row.textContent = fromM.emoji + ' ' + fromM.name + ' → ' + toM.emoji + ' ' + toM.name + '：' + count + '回';
+      matrixEl.appendChild(row);
+    });
+    chainEl.appendChild(matrixEl);
+
+    // C: 通し読み（全エントリを時系列1本で、サイクル区切り付き）
+    const readEl = document.getElementById('retro-read');
+    readEl.innerHTML = '';
+    const sortedByDate = entries.slice().sort((a, b) =>
+      (a.date || '').localeCompare(b.date || '') || (a.cycle || 0) - (b.cycle || 0)
+    );
+    let lastCycle = -1;
+    sortedByDate.forEach(e => {
+      const cycle = e.cycle ?? 0;
+      if (cycle !== lastCycle) {
+        const divider = document.createElement('div');
+        divider.className = 'retro-cycle-divider';
+        divider.textContent = cycle === 0 ? 'はじまり' : 'サイクル ' + cycle;
+        readEl.appendChild(divider);
+        lastCycle = cycle;
+      }
+      const m = getMember(e.author);
+      const entryEl = document.createElement('div');
+      entryEl.className = 'retro-entry';
+      const metaEl = document.createElement('div');
+      metaEl.className = 'retro-entry-meta';
+      metaEl.style.color = m.color;
+      metaEl.textContent = m.emoji + ' ' + m.name + ' · ' + fmtDate(e.date) + (e.mood ? '  ' + e.mood : '');
+      const titleEl = document.createElement('div');
+      titleEl.className = 'retro-entry-title';
+      titleEl.textContent = e.title || '';
+      const bodyEl = document.createElement('div');
+      bodyEl.className = 'retro-entry-body';
+      bodyEl.textContent = e.body || '';
+      entryEl.appendChild(metaEl);
+      entryEl.appendChild(titleEl);
+      entryEl.appendChild(bodyEl);
+      readEl.appendChild(entryEl);
+    });
+  }
+
+  function buildRetrospectiveMarkdown() {
+    const entries = data.entries || [];
+    const members = (data.members || []).filter(m => m.inRotation);
+    let md = '# かわりばんこ — ふりかえり\n\n';
+
+    md += '## 統計\n\n';
+    members.forEach(m => {
+      const myEntries = entries.filter(e => e.author === m.id);
+      const count = myEntries.length;
+      const avgLen = count > 0
+        ? Math.round(myEntries.reduce((s, e) => s + (e.body || '').length, 0) / count)
+        : 0;
+      const receivedReplies = entries.filter(e => {
+        if (!e.replyTo) return false;
+        const t = entries.find(t => t.id === e.replyTo);
+        return t && t.author === m.id;
+      }).length;
+      md += '- **' + m.name + '**: ' + count + '件 / 平均' + avgLen + '字 / 受取返信' + receivedReplies + '件\n';
+    });
+
+    md += '\n## 通し読み\n\n';
+    const sortedByDate = entries.slice().sort((a, b) =>
+      (a.date || '').localeCompare(b.date || '') || (a.cycle || 0) - (b.cycle || 0)
+    );
+    let lastCycle = -1;
+    sortedByDate.forEach(e => {
+      const cycle = e.cycle ?? 0;
+      if (cycle !== lastCycle) {
+        md += '\n---\n\n### ' + (cycle === 0 ? 'はじまり' : 'サイクル ' + cycle) + '\n\n';
+        lastCycle = cycle;
+      }
+      const m = getMember(e.author);
+      md += '#### ' + m.name + ' · ' + e.date + '\n\n';
+      md += '**' + (e.title || '') + '**\n\n';
+      md += (e.body || '') + '\n\n';
+    });
+
+    return md;
+  }
+
   // ── 全文検索 ─────────────────────────────
   document.getElementById('search-input').addEventListener('input', function() {
     searchQuery = this.value.trim();
@@ -727,6 +1034,52 @@
     return frag;
   }
 
+  // ── 指定IDのエントリを確実に画面に出す（すべてのフィルタを不変条件として扱う）────
+  // 飛び先が検索・著者フィルタ・非表示のいずれかで隠れている場合、対応するフィルタを解除してから再描画する。
+  // これにより「フィルタが何個増えてもここに1行足すだけ」になる（Decision Log #24参照）。
+  function revealEntry(targetId) {
+    const allLocal = loadLocalEntries();
+    const targetEntry = (data.entries || []).concat(allLocal).find(e => e.id === targetId);
+    if (!targetEntry) return false;
+
+    let needsRender = false;
+
+    // 著者フィルタで非表示なら解除
+    if (!activeAuthors.has(targetEntry.author)) {
+      activeAuthors.add(targetEntry.author);
+      const chip = [...chipsEl.children].find(b => b.dataset.author === targetEntry.author);
+      if (chip) { chip.classList.remove('muted'); chip.setAttribute('aria-pressed', 'true'); }
+      needsRender = true;
+    }
+
+    // 非表示下書きなら再表示
+    const isLocalEntry = allLocal.some(l => l.id === targetId);
+    if (isLocalEntry) {
+      const hidden = getHiddenIds();
+      if (hidden.has(targetId)) {
+        showHiddenEntry(targetId);
+        needsRender = true;
+      }
+    }
+
+    // 検索フィルタで非表示なら解除
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const matchesSearch =
+        (targetEntry.title || '').toLowerCase().includes(q) ||
+        (targetEntry.body  || '').toLowerCase().includes(q);
+      if (!matchesSearch) {
+        searchQuery = '';
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) searchInput.value = '';
+        needsRender = true;
+      }
+    }
+
+    if (needsRender) render();
+    return true;
+  }
+
   // ── エントリカード生成 ───────────────────
   function buildCard(entry, isLocal, isNew, isReflected) {
     const m = getMember(entry.author);
@@ -800,35 +1153,14 @@
       bodyEl.textContent  = entry.body  || '';
     }
 
-    // 返信リンク: フィルタ非表示・非表示下書きを自動解除して飛ぶ
+    // 返信リンク: 飛び先が見えなくなっている場合はすべてのフィルタを解除してから飛ぶ（revealEntry が一括処理）
     const replyLink = card.querySelector('.reply-badge a');
     if (replyLink) {
       replyLink.addEventListener('click', ev => {
         const targetEl = document.getElementById('entry-' + entry.replyTo);
         if (!targetEl) {
           ev.preventDefault();
-          const allLocal = loadLocalEntries();
-          const targetEntry = (data.entries || []).concat(allLocal).find(e => e.id === entry.replyTo);
-          if (!targetEntry) return;
-          let needsRender = false;
-          // 著者フィルタで非表示なら解除
-          if (!activeAuthors.has(targetEntry.author)) {
-            activeAuthors.add(targetEntry.author);
-            // querySelector の CSS セレクタインジェクションを避けるため dataset で比較
-            const chip = [...chipsEl.children].find(b => b.dataset.author === targetEntry.author);
-            if (chip) { chip.classList.remove('muted'); chip.setAttribute('aria-pressed','true'); }
-            needsRender = true;
-          }
-          // 非表示下書きなら再表示
-          const isLocal = allLocal.some(l => l.id === targetEntry.id);
-          if (isLocal) {
-            const hidden = getHiddenIds();
-            if (hidden.has(targetEntry.id)) {
-              showHiddenEntry(targetEntry.id);
-              needsRender = true;
-            }
-          }
-          if (needsRender) render();
+          revealEntry(entry.replyTo);
           setTimeout(() => {
             const el = document.getElementById('entry-' + entry.replyTo);
             if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1123,11 +1455,14 @@
     const wrap = document.createElement('div');
     wrap.className = 'unread-notice';
 
-    // メインメッセージ
+    // メインメッセージ（spanで包んでflex-shrink:0を確保。テキストノードだとflexでシュリンクして折り返す）
     const mainText = lastMyEntry
       ? lastMyEntry.id + ' を書いてから ' + sessionNewCount + ' 件の新着'
       : sessionNewCount + ' 件の新着';
-    wrap.appendChild(document.createTextNode(mainText));
+    const mainSpan = document.createElement('span');
+    mainSpan.className = 'unread-main-text';
+    mainSpan.textContent = mainText;
+    wrap.appendChild(mainSpan);
 
     // 著者内訳
     const authorsSummary = Object.entries(countByAuthor)
